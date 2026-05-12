@@ -43,7 +43,7 @@ See [the conda documentation](https://docs.conda.io/en/latest/) for installation
 Clone the repository:
 
 ```
-git clone https://github.com/hkfrei/geo-metadata-engine.git
+git clone https://github.com/kanton-bern/geo-metadata-engine.git
 cd geo-metadata-engine
 ```
 
