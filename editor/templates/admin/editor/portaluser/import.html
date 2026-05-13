@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %} {% load i18n %} {% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo;
+  <a href="{% url 'admin:editor_portaluser_changelist' %}">Portal Users</a>
+  &rsaquo; CSV importieren
+</div>
+{% endblock %} {% block content %}
+<p>
+  Erwartet eine CSV-Datei mit den Spalten:<br />
+  <code
+    >name, vorname, email_kontakt, email_user, abteilung, funktion, eintritt_am,
+    status, intern, rolle, racf_id, typ_account, typ_infomail, ews, bkt, prod,
+    benutzertyp, status_nb, bemerkung</code
+  >
+</p>
+<p>
+  Vorhandene Einträge werden anhand der <strong>RACF-ID</strong> aktualisiert,
+  neue Einträge werden erstellt. Das Datum <code>eintritt_am</code> akzeptiert
+  die Formate <code>YYYY-MM-DD</code> und <code>DD.MM.YYYY</code>.
+</p>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="form-row">
+    <label for="csv_file">CSV-Datei:</label>
+    <input type="file" name="csv_file" id="csv_file" accept=".csv" required />
+  </div>
+  <div class="submit-row">
+    <input type="submit" value="Importieren" class="default" />
+    <a href="{% url 'admin:editor_portaluser_changelist' %}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}
