@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
+    # "django_auth_adfs",
 ]
 
 MIDDLEWARE = [
@@ -47,6 +49,9 @@ MIDDLEWARE = [
 ]
 
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
@@ -129,7 +134,32 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# AUTHENTICATION_BACKENDS = [
+#     "django_auth_adfs.backend.AdfsAuthCodeBackend",
+# ]
+
+# AUTH_ADFS = {
+#     "SERVER": os.environ.get("ADFS_SERVER"),
+#     "CLIENT_ID": os.environ.get("ADFS_CLIENT_ID"),
+#     "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
+#     "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
+#     "CA_BUNDLE": True,
+#    "CLAIM_MAPPING": {
+#        "first_name": "given_name",
+#        "last_name": "family_name",
+#        "email": "email",
+#    },
+#    "GROUP_CLAIM": "group",
+#    "MIRROR_GROUPS": True,
+# }
+
+# LOGIN_URL = "django_auth_adfs:login"
+# LOGIN_REDIRECT_URL = "/"
