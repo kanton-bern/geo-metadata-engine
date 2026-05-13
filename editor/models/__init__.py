@@ -10,4 +10,5 @@ from .app import App
 from .tag import Tag
 from .trigger import Trigger
 from .workflow import Workflow
+from .portal_user import PortalUser
 
