@@ -1,14 +1,22 @@
+from .models import (
+    Thema, Geopaeckli, Ebene, Attribut, Wertetabelle,
+    Dienst, View, Tag, Trigger, PortalUser,
+    # Map, App, Workflow — models bleiben erhalten, vorerst nicht registriert
+)
+from .models.portal_user import TYP_ACCOUNT_CHOICES
 from django.contrib import admin
 from django import forms
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import path
+from datetime import datetime
+import csv
+import io
 
 admin.site.site_header = "GEO Metadaten Engine"
 admin.site.site_title = "GEO Metadaten Engine"
 admin.site.index_title = "Administration"
-from .models import (
-    Thema, Geopaeckli, Ebene, Attribut, Wertetabelle,
-    Dienst, View, Tag, Trigger,
-    # Map, App, Workflow — models bleiben erhalten, vorerst nicht registriert
-)
 
 
 # ---------------------------------------------------------------------------
@@ -24,7 +32,8 @@ class WertetabelleInline(admin.TabularInline):
         if db_field.name == 'wertetabelle':
             geop_id = _geopaeckli_id_from_request(request, 'attribut')
             if geop_id:
-                kwargs['queryset'] = Wertetabelle.objects.filter(geopaeckli_id=geop_id)
+                kwargs['queryset'] = Wertetabelle.objects.filter(
+                    geopaeckli_id=geop_id)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
@@ -143,7 +152,8 @@ class EbeneAdmin(admin.ModelAdmin):
 # ---------------------------------------------------------------------------
 class AttributAdmin(admin.ModelAdmin):
     inlines = [WertetabelleInline]
-    list_display = ('name_attribut', 'geopaeckli', 'attributtyp', 'anzahl_wertetabellen')
+    list_display = ('name_attribut', 'geopaeckli',
+                    'attributtyp', 'anzahl_wertetabellen')
     list_filter = ('geopaeckli', 'attributtyp')
     search_fields = ('name_attribut',)
 
@@ -212,3 +222,204 @@ admin.site.register(View, ViewAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Trigger)
 # Map, App, Workflow — vorerst nicht registriert
+
+
+# ---------------------------------------------------------------------------
+# Portal User
+# ---------------------------------------------------------------------------
+class PortalUserAdminForm(forms.ModelForm):
+    typ_account = forms.MultipleChoiceField(
+        choices=TYP_ACCOUNT_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+    )
+
+    class Meta:
+        model = PortalUser
+        fields = '__all__'
+
+
+def export_zu_bestellen_csv(modeladmin, request, queryset):
+    users = PortalUser.objects.filter(status='zu bestellen').order_by('name')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="portal_users_zu_bestellen.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['email_user', 'rolle', 'benutzertyp',
+                    'vorname', 'name', 'email_kontakt'])
+    for u in users:
+        usertyp = 'intern' if u.intern else 'extern'
+        writer.writerow([u.email_user, u.rolle, usertyp,
+                        u.vorname, u.name, u.email_kontakt])
+    return response
+
+
+export_zu_bestellen_csv.short_description = 'CSV Export: zu bestellen'
+
+
+def email_string_kontakt(modeladmin, request, queryset):
+    addresses = queryset.order_by('name').values_list('email_kontakt', flat=True)
+    return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
+
+email_string_kontakt.short_description = 'E-Mail-String: email_kontakt'
+
+
+def email_string_user(modeladmin, request, queryset):
+    addresses = queryset.order_by('name').values_list('email_user', flat=True)
+    return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
+
+email_string_user.short_description = 'E-Mail-String: email_user'
+
+
+def infomail_stoerung(modeladmin, request, queryset):
+    addresses = PortalUser.objects.filter(typ_infomail='Störung').order_by('name').values_list('email_kontakt', flat=True)
+    return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
+
+infomail_stoerung.short_description = 'E-Mail-String: Störung'
+
+
+def infomail_erweiterung_stoerung(modeladmin, request, queryset):
+    addresses = PortalUser.objects.filter(typ_infomail='Erweiterung/Störung').order_by('name').values_list('email_kontakt', flat=True)
+    return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
+
+infomail_erweiterung_stoerung.short_description = 'E-Mail-String: Erweiterung/Störung'
+
+
+def benutzerliste_erstellen(modeladmin, request, queryset):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="benutzerliste.csv"'
+    writer = csv.writer(response)
+    writer.writerow([
+        'name', 'vorname', 'email_kontakt', 'email_user',
+        'abteilung', 'funktion', 'eintritt_am', 'status',
+        'intern', 'rolle', 'racf_id', 'typ_account', 'typ_infomail',
+        'ews', 'bkt', 'prod', 'benutzertyp', 'status_nb', 'bemerkung',
+    ])
+    for u in queryset.order_by('name'):
+        writer.writerow([
+            u.name, u.vorname, u.email_kontakt, u.email_user,
+            u.abteilung, u.funktion, u.eintritt_am, u.status,
+            u.intern, u.rolle, u.racf_id,
+            ','.join(u.typ_account), u.typ_infomail,
+            u.ews, u.bkt, u.prod, u.benutzertyp, u.status_nb, u.bemerkung,
+        ])
+    return response
+
+benutzerliste_erstellen.short_description = 'Benutzerliste erstellen'
+
+
+@admin.register(PortalUser)
+class PortalUserAdmin(admin.ModelAdmin):
+    form = PortalUserAdminForm
+    change_list_template = 'admin/editor/portaluser/change_list.html'
+    actions = [export_zu_bestellen_csv, email_string_kontakt, email_string_user, benutzerliste_erstellen, infomail_stoerung, infomail_erweiterung_stoerung]
+    list_display = ('name', 'vorname', 'racf_id',
+                    'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
+    list_filter = ('status', 'abteilung', 'intern', 'rolle')
+    search_fields = ('name', 'vorname', 'racf_id',
+                     'status', 'typ_account', 'typ_infomail')
+    readonly_fields = ('typ_infomail',)
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'vorname', 'email_kontakt', 'email_user'),
+        }),
+        ('Organisation', {
+            'fields': ('abteilung', 'funktion', 'eintritt_am'),
+        }),
+        ('Status & Rolle', {
+            'fields': ('status', 'intern', 'rolle'),
+        }),
+        ('Technisches', {
+            'fields': ('racf_id', 'typ_account', 'typ_infomail'),
+            'description': 'typ_infomail wird automatisch aus dem Usertyp abgeleitet.',
+        }),
+        ('Systeme', {
+            'fields': ('ews', 'bkt', 'prod'),
+        }),
+        ('Nutzungsbedingungen', {
+            'fields': ('nb_pdf', 'status_nb'),
+        }),
+        ('Sonstiges', {
+            'fields': ('bemerkung',),
+        }),
+    )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('import-csv/', self.admin_site.admin_view(self.import_csv_view), name='portaluser_import_csv'),
+        ]
+        return custom_urls + urls
+
+    def import_csv_view(self, request):
+        if request.method == 'POST':
+            csv_file = request.FILES.get('csv_file')
+            if not csv_file:
+                self.message_user(request, "Keine Datei ausgewählt.", level='error')
+                return redirect(request.path)
+
+            reader = csv.DictReader(io.StringIO(csv_file.read().decode('utf-8')))
+            created = updated = errors = 0
+            error_details = []
+
+            for i, row in enumerate(reader, start=2):
+                try:
+                    intern_raw = str(row.get('intern', 'True')).strip().lower()
+                    intern = intern_raw in ('true', 'intern', '1', 'ja')
+
+                    typ_account_raw = row.get('typ_account', '')
+                    typ_account = [x.strip() for x in typ_account_raw.split(',') if x.strip()]
+
+                    eintritt_raw = row.get('eintritt_am', '').strip()
+                    eintritt_am = None
+                    for fmt in ('%Y-%m-%d', '%d.%m.%Y'):
+                        try:
+                            eintritt_am = datetime.strptime(eintritt_raw, fmt).date()
+                            break
+                        except ValueError:
+                            continue
+                    if eintritt_am is None:
+                        raise ValueError(f"Ungültiges Datum: '{eintritt_raw}'")
+
+                    def parse_bool(val):
+                        return str(val).strip().lower() in ('true', '1', 'ja', 'yes')
+
+                    _, was_created = PortalUser.objects.update_or_create(
+                        racf_id=row['racf_id'].strip(),
+                        defaults={
+                            'name': row['name'].strip(),
+                            'vorname': row['vorname'].strip(),
+                            'email_kontakt': row['email_kontakt'].strip(),
+                            'email_user': row['email_user'].strip(),
+                            'abteilung': row['abteilung'].strip(),
+                            'funktion': row.get('funktion', '').strip(),
+                            'eintritt_am': eintritt_am,
+                            'status': row['status'].strip(),
+                            'intern': intern,
+                            'rolle': row['rolle'].strip(),
+                            'typ_account': typ_account,
+                            'ews': parse_bool(row.get('ews', False)),
+                            'bkt': parse_bool(row.get('bkt', False)),
+                            'prod': parse_bool(row.get('prod', False)),
+                            'status_nb': row.get('status_nb', '').strip(),
+                            'bemerkung': row.get('bemerkung', '').strip(),
+                        },
+                    )
+                    if was_created:
+                        created += 1
+                    else:
+                        updated += 1
+                except Exception as e:
+                    errors += 1
+                    error_details.append(f"Zeile {i}: {e}")
+
+            level = 'success' if not errors else 'warning'
+            self.message_user(request, f"{created} erstellt, {updated} aktualisiert, {errors} Fehler.", level=level)
+            for detail in error_details:
+                self.message_user(request, detail, level='error')
+            return redirect('../')
+
+        return TemplateResponse(request, 'admin/editor/portaluser/import.html', {
+            **self.admin_site.each_context(request),
+            'title': 'Portal Users importieren',
+            'opts': self.model._meta,
+        })
