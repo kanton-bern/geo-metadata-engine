@@ -261,6 +261,14 @@ export_zu_bestellen_bkt_csv = _export_zu_bestellen_csv('bkt')
 export_zu_bestellen_prod_csv = _export_zu_bestellen_csv('prod')
 
 
+def email_string_kontakt(modeladmin, request, queryset):
+    addresses = queryset.order_by('name').values_list('email_kontakt', flat=True)
+    return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
+
+
+email_string_kontakt.short_description = 'E-Mail-String: Kontakt'
+
+
 def infomail_stoerung(modeladmin, request, queryset):
     addresses = PortalUser.objects.all().order_by(
         'name').values_list('email_kontakt', flat=True)
@@ -308,7 +316,7 @@ class PortalUserAdmin(admin.ModelAdmin):
     change_list_template = 'admin/editor/portaluser/change_list.html'
     actions = [
         export_zu_bestellen_ews_csv, export_zu_bestellen_bkt_csv, export_zu_bestellen_prod_csv,
-        benutzerliste_erstellen, infomail_stoerung, infomail_erweiterung,
+        benutzerliste_erstellen, email_string_kontakt, infomail_stoerung, infomail_erweiterung,
     ]
     list_display = ('name', 'vorname', 'racf_id', 'email_user',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
