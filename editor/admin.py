@@ -237,6 +237,17 @@ class PortalUserAdminForm(forms.ModelForm):
         model = PortalUser
         fields = '__all__'
 
+    def clean_racf_id(self):
+        racf_id = self.cleaned_data.get('racf_id')
+        qs = PortalUser.objects.filter(racf_id=racf_id)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(
+                f'Ein Benutzer mit der RACF-ID "{racf_id}" existiert bereits.'
+            )
+        return racf_id
+
 
 def export_zu_bestellen_csv(modeladmin, request, queryset):
     users = PortalUser.objects.filter(status='zu bestellen').order_by('name')
