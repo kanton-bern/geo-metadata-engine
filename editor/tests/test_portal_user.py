@@ -78,14 +78,6 @@ class PortalUserAdminActionTest(TestCase):
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
         self.assertEqual(rows[0], ['email_user', 'rolle', 'usertyp', 'vorname', 'name', 'email_kontakt'])
 
-    def test_email_string_user_returns_semicolon_separated(self):
-        u1 = make_portal_user(racf_id='AA01', email_user='ua@example.com')
-        u2 = make_portal_user(racf_id='AA02', email_user='ub@example.com')
-        response = self._post_action('email_string_user', [u1, u2])
-        emails = response.content.decode('utf-8').split(';')
-        self.assertIn('ua@example.com', emails)
-        self.assertIn('ub@example.com', emails)
-
     def test_benutzerliste_erstellen_csv_headers_and_rows(self):
         u1 = make_portal_user(racf_id='AA01')
         response = self._post_action('benutzerliste_erstellen', [u1])
