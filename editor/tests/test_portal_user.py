@@ -40,20 +40,6 @@ class PortalUserModelTest(TestCase):
         user = make_portal_user()
         self.assertTrue(user.intern)
 
-    def test_typ_infomail_set_to_erweiterung_when_intern(self):
-        user = make_portal_user(intern=True)
-        self.assertEqual(user.typ_infomail, 'Erweiterung/Störung')
-
-    def test_typ_infomail_set_to_stoerung_when_extern(self):
-        user = make_portal_user(intern=False)
-        self.assertEqual(user.typ_infomail, 'Störung')
-
-    def test_typ_infomail_updated_on_save(self):
-        user = make_portal_user(intern=True)
-        user.intern = False
-        user.save()
-        self.assertEqual(user.typ_infomail, 'Störung')
-
     def test_typ_account_stores_multiple_values(self):
         user = make_portal_user(typ_account=['AD', 'BE-Login'])
         user.refresh_from_db()
@@ -126,13 +112,13 @@ class PortalUserAdminActionTest(TestCase):
         self.assertIn('stoerung@example.com', content)
         self.assertIn('erw@example.com', content)
 
-    def test_infomail_erweiterung_stoerung_ignores_selection(self):
+    def test_infomail_erweiterung_returns_only_intern_users(self):
         make_portal_user(racf_id='AA01', intern=True, email_kontakt='erw@example.com')
-        u2 = make_portal_user(racf_id='AA02', intern=False, email_kontakt='stoerung@example.com')
-        response = self._post_action('infomail_erweiterung_stoerung', [u2])  # select the wrong one
+        u2 = make_portal_user(racf_id='AA02', intern=False, email_kontakt='extern@example.com')
+        response = self._post_action('infomail_erweiterung', [u2])  # selection is ignored
         content = response.content.decode('utf-8')
         self.assertIn('erw@example.com', content)
-        self.assertNotIn('stoerung@example.com', content)
+        self.assertNotIn('extern@example.com', content)
 
 
 # ---------------------------------------------------------------------------
@@ -150,7 +136,7 @@ class PortalUserImportTest(TestCase):
         fieldnames = [
             'name', 'vorname', 'email_kontakt', 'email_user',
             'abteilung', 'funktion', 'eintritt_am', 'status',
-            'intern', 'rolle', 'racf_id', 'typ_account', 'typ_infomail',
+            'intern', 'rolle', 'racf_id', 'typ_account',
             'ews', 'bkt', 'prod', 'benutzertyp', 'status_nb', 'bemerkung',
         ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -164,7 +150,7 @@ class PortalUserImportTest(TestCase):
             'email_kontakt': 'k@example.com', 'email_user': 'u@example.com',
             'abteilung': 'AFR', 'funktion': '', 'eintritt_am': '2020-01-01',
             'status': 'aktiv', 'intern': 'True', 'rolle': 'Viewer',
-            'racf_id': 'ABCD', 'typ_account': 'AD', 'typ_infomail': '',
+            'racf_id': 'ABCD', 'typ_account': 'AD',
             'ews': 'False', 'bkt': 'False', 'prod': 'False',
             'benutzertyp': 'Creator', 'status_nb': '', 'bemerkung': '',
         }
