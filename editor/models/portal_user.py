@@ -22,6 +22,7 @@ ABTEILUNG_CHOICES = [
 ]
 
 FUNKTION_CHOICES = [
+    ('andere', 'andere (siehe Bemerkung)'),
     ('Hauptförster', 'Hauptförster'),
     ('Nebenförster', 'Nebenförster'),
     ('Käfervogt', 'Käfervogt'),
@@ -53,7 +54,7 @@ class PortalUser(models.Model):
     email_user = models.EmailField()
     abteilung = models.CharField(max_length=10, choices=ABTEILUNG_CHOICES)
     funktion = models.CharField(
-        max_length=20, choices=FUNKTION_CHOICES, blank=True)
+        max_length=20, choices=FUNKTION_CHOICES, default='andere')
     eintritt_am = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     intern = models.BooleanField("Intern", default=True)
