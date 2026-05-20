@@ -41,6 +41,10 @@ class PortalUserModelTest(TestCase):
         user = make_portal_user()
         self.assertTrue(user.intern)
 
+    def test_racf_id_is_primary_key(self):
+        user = make_portal_user(racf_id='AA01')
+        self.assertEqual(user.pk, 'AA01')
+
     def test_typ_account_stores_multiple_values(self):
         user = make_portal_user(typ_account=['AD', 'BE-Login'])
         user.refresh_from_db()
@@ -111,7 +115,20 @@ class PortalUserAdminActionTest(TestCase):
         make_portal_user(racf_id='AA01', status='zu bestellen')
         response = self._post_action('export_zu_bestellen_csv', [])
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
-        self.assertEqual(rows[0], ['email_user', 'rolle', 'usertyp', 'vorname', 'name', 'email_kontakt'])
+        self.assertEqual(rows[0], ['E-Mail', 'Rolle', 'Benutzertyp', 'Vorname', 'Nachname', 'Benutzerkennung'])
+
+    def test_export_zu_bestellen_csv_data_row(self):
+        make_portal_user(racf_id='AA01', status='zu bestellen',
+                         email_user='u@example.com', rolle='Viewer',
+                         benutzertyp='Creator', vorname='Max', name='Muster')
+        response = self._post_action('export_zu_bestellen_csv', [])
+        rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
+        self.assertEqual(rows[1], ['u@example.com', 'Viewer', 'Creator', 'Max', 'Muster', 'AA01'])
+
+    def test_export_zu_bestellen_csv_filename(self):
+        response = self._post_action('export_zu_bestellen_csv', [])
+        disposition = response['Content-Disposition']
+        self.assertRegex(disposition, r'\d{4}_\d{2}_\d{2}_GIS_Hub_Erfassung_User_AD_BE-Login\.csv')
 
     def test_benutzerliste_erstellen_csv_headers_and_rows(self):
         u1 = make_portal_user(racf_id='AA01')
@@ -121,6 +138,11 @@ class PortalUserAdminActionTest(TestCase):
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
         self.assertEqual(rows[0][0], 'name')
         self.assertEqual(len(rows), 2)  # header + 1 row
+
+    def test_benutzerliste_erstellen_filename(self):
+        u1 = make_portal_user(racf_id='AA01')
+        response = self._post_action('benutzerliste_erstellen', [u1])
+        self.assertIn('Benutzerliste_GIS_Hub.csv', response['Content-Disposition'])
 
     def test_benutzerliste_erstellen_only_exports_selected(self):
         u1 = make_portal_user(racf_id='AA01', name='Selected')
