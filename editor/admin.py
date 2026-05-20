@@ -306,7 +306,7 @@ class PortalUserAdmin(admin.ModelAdmin):
                infomail_stoerung, infomail_erweiterung]
     list_display = ('name', 'vorname', 'racf_id',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
-    list_filter = ('status', 'abteilung', 'intern', 'rolle')
+    list_filter = ('status', 'abteilung', 'intern', 'rolle', 'ews', 'bkt', 'prod')
     search_fields = ('name', 'vorname', 'racf_id',
                      'status', 'typ_account')
     fieldsets = (
