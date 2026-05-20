@@ -174,6 +174,16 @@ class PortalUserAdminActionTest(TestCase):
         self.assertIn('Selected', names)
         self.assertNotIn('NotSelected', names)
 
+    def test_email_string_kontakt_returns_selected_addresses(self):
+        u1 = make_portal_user(racf_id='AA01', email_kontakt='a@example.com')
+        u2 = make_portal_user(racf_id='AA02', email_kontakt='b@example.com')
+        make_portal_user(racf_id='AA03', email_kontakt='c@example.com')
+        response = self._post_action('email_string_kontakt', [u1, u2])
+        emails = response.content.decode('utf-8').split(';')
+        self.assertIn('a@example.com', emails)
+        self.assertIn('b@example.com', emails)
+        self.assertNotIn('c@example.com', emails)
+
     def test_infomail_stoerung_returns_all_users(self):
         make_portal_user(racf_id='AA01', intern=False, email_kontakt='stoerung@example.com')
         u2 = make_portal_user(racf_id='AA02', intern=True, email_kontakt='erw@example.com')
