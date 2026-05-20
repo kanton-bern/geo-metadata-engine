@@ -101,34 +101,55 @@ class PortalUserAdminActionTest(TestCase):
             '_selected_action': [str(u.pk) for u in users],
         })
 
-    def test_export_zu_bestellen_csv_only_includes_zu_bestellen(self):
-        u1 = make_portal_user(racf_id='AA01', status='zu bestellen', name='Alpha')
-        make_portal_user(racf_id='AA02', status='aktiv', name='Beta')
-        response = self._post_action('export_zu_bestellen_csv', [u1])
+    def test_export_zu_bestellen_ews_csv_only_includes_ews_users(self):
+        make_portal_user(racf_id='AA01', status='zu bestellen', ews=True, name='Alpha')
+        make_portal_user(racf_id='AA02', status='zu bestellen', ews=False, name='Beta')
+        make_portal_user(racf_id='AA03', status='aktiv', ews=True, name='Gamma')
+        response = self._post_action('export_zu_bestellen_ews_csv', [])
         self.assertEqual(response.status_code, 200)
         self.assertIn('text/csv', response['Content-Type'])
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
-        self.assertEqual(len(rows), 2)  # header + 1 row
-        self.assertIn('Alpha', rows[1])
+        names = [row[4] for row in rows[1:]]
+        self.assertIn('Alpha', names)
+        self.assertNotIn('Beta', names)
+        self.assertNotIn('Gamma', names)
+
+    def test_export_zu_bestellen_bkt_csv_only_includes_bkt_users(self):
+        make_portal_user(racf_id='AA01', status='zu bestellen', bkt=True, name='Alpha')
+        make_portal_user(racf_id='AA02', status='zu bestellen', bkt=False, name='Beta')
+        response = self._post_action('export_zu_bestellen_bkt_csv', [])
+        rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
+        names = [row[4] for row in rows[1:]]
+        self.assertIn('Alpha', names)
+        self.assertNotIn('Beta', names)
+
+    def test_export_zu_bestellen_prod_csv_only_includes_prod_users(self):
+        make_portal_user(racf_id='AA01', status='zu bestellen', prod=True, name='Alpha')
+        make_portal_user(racf_id='AA02', status='zu bestellen', prod=False, name='Beta')
+        response = self._post_action('export_zu_bestellen_prod_csv', [])
+        rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
+        names = [row[4] for row in rows[1:]]
+        self.assertIn('Alpha', names)
+        self.assertNotIn('Beta', names)
 
     def test_export_zu_bestellen_csv_headers(self):
-        make_portal_user(racf_id='AA01', status='zu bestellen')
-        response = self._post_action('export_zu_bestellen_csv', [])
+        make_portal_user(racf_id='AA01', status='zu bestellen', ews=True)
+        response = self._post_action('export_zu_bestellen_ews_csv', [])
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
         self.assertEqual(rows[0], ['E-Mail', 'Rolle', 'Benutzertyp', 'Vorname', 'Nachname', 'Benutzerkennung'])
 
     def test_export_zu_bestellen_csv_data_row(self):
-        make_portal_user(racf_id='AA01', status='zu bestellen',
+        make_portal_user(racf_id='AA01', status='zu bestellen', ews=True,
                          email_user='u@example.com', rolle='Viewer',
                          benutzertyp='Creator', vorname='Max', name='Muster')
-        response = self._post_action('export_zu_bestellen_csv', [])
+        response = self._post_action('export_zu_bestellen_ews_csv', [])
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
         self.assertEqual(rows[1], ['u@example.com', 'Viewer', 'Creator', 'Max', 'Muster', 'AA01'])
 
     def test_export_zu_bestellen_csv_filename(self):
-        response = self._post_action('export_zu_bestellen_csv', [])
+        response = self._post_action('export_zu_bestellen_ews_csv', [])
         disposition = response['Content-Disposition']
-        self.assertRegex(disposition, r'\d{4}_\d{2}_\d{2}_GIS_Hub_Erfassung_User_AD_BE-Login\.csv')
+        self.assertRegex(disposition, r'\d{4}_\d{2}_\d{2}_GIS_Hub_Erfassung_User_AD_BE-Login_EWS\.csv')
 
     def test_benutzerliste_erstellen_csv_headers_and_rows(self):
         u1 = make_portal_user(racf_id='AA01')
