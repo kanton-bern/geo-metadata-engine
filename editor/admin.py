@@ -304,10 +304,10 @@ class PortalUserAdmin(admin.ModelAdmin):
     change_list_template = 'admin/editor/portaluser/change_list.html'
     actions = [export_zu_bestellen_csv, benutzerliste_erstellen,
                infomail_stoerung, infomail_erweiterung]
-    list_display = ('name', 'vorname', 'racf_id',
+    list_display = ('name', 'vorname', 'racf_id', 'email_user',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
     list_filter = ('status', 'abteilung', 'intern', 'rolle', 'ews', 'bkt', 'prod')
-    search_fields = ('name', 'vorname', 'racf_id',
+    search_fields = ('name', 'vorname', 'racf_id', 'email_user',
                      'status', 'typ_account')
     fieldsets = (
         (None, {
