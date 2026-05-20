@@ -270,11 +270,11 @@ def infomail_stoerung(modeladmin, request, queryset):
 infomail_stoerung.short_description = 'E-Mail-String: Störung (alle)'
 
 
-def infomail_erweiterung_stoerung(modeladmin, request, queryset):
-    addresses = PortalUser.objects.filter(typ_infomail='Erweiterung/Störung').order_by('name').values_list('email_kontakt', flat=True)
+def infomail_erweiterung(modeladmin, request, queryset):
+    addresses = PortalUser.objects.filter(intern=True).order_by('name').values_list('email_kontakt', flat=True)
     return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
 
-infomail_erweiterung_stoerung.short_description = 'E-Mail-String: Erweiterung/Störung'
+infomail_erweiterung.short_description = 'E-Mail-String: Erweiterung (intern)'
 
 
 def benutzerliste_erstellen(modeladmin, request, queryset):
@@ -284,7 +284,7 @@ def benutzerliste_erstellen(modeladmin, request, queryset):
     writer.writerow([
         'name', 'vorname', 'email_kontakt', 'email_user',
         'abteilung', 'funktion', 'eintritt_am', 'status',
-        'intern', 'rolle', 'racf_id', 'typ_account', 'typ_infomail',
+        'intern', 'rolle', 'racf_id', 'typ_account',
         'ews', 'bkt', 'prod', 'benutzertyp', 'status_nb', 'bemerkung',
     ])
     for u in queryset.order_by('name'):
@@ -292,7 +292,7 @@ def benutzerliste_erstellen(modeladmin, request, queryset):
             u.name, u.vorname, u.email_kontakt, u.email_user,
             u.abteilung, u.funktion, u.eintritt_am, u.status,
             u.intern, u.rolle, u.racf_id,
-            ','.join(u.typ_account), u.typ_infomail,
+            ','.join(u.typ_account),
             u.ews, u.bkt, u.prod, u.benutzertyp, u.status_nb, u.bemerkung,
         ])
     return response
@@ -304,13 +304,12 @@ benutzerliste_erstellen.short_description = 'Benutzerliste erstellen'
 class PortalUserAdmin(admin.ModelAdmin):
     form = PortalUserAdminForm
     change_list_template = 'admin/editor/portaluser/change_list.html'
-    actions = [export_zu_bestellen_csv, email_string_user, benutzerliste_erstellen, infomail_stoerung, infomail_erweiterung_stoerung]
+    actions = [export_zu_bestellen_csv, email_string_user, benutzerliste_erstellen, infomail_stoerung, infomail_erweiterung]
     list_display = ('name', 'vorname', 'racf_id',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
     list_filter = ('status', 'abteilung', 'intern', 'rolle')
     search_fields = ('name', 'vorname', 'racf_id',
-                     'status', 'typ_account', 'typ_infomail')
-    readonly_fields = ('typ_infomail',)
+                     'status', 'typ_account')
     fieldsets = (
         (None, {
             'fields': ('name', 'vorname', 'email_kontakt', 'email_user'),
@@ -322,8 +321,7 @@ class PortalUserAdmin(admin.ModelAdmin):
             'fields': ('status', 'intern', 'rolle'),
         }),
         ('Technisches', {
-            'fields': ('racf_id', 'typ_account', 'typ_infomail'),
-            'description': 'typ_infomail wird automatisch aus dem Usertyp abgeleitet.',
+            'fields': ('racf_id', 'typ_account'),
         }),
         ('Systeme', {
             'fields': ('ews', 'bkt', 'prod'),

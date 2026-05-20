@@ -41,11 +41,6 @@ TYP_ACCOUNT_CHOICES = [
     ('Built-In', 'Built-In'),
 ]
 
-TYP_INFOMAIL_CHOICES = [
-    ('Störung', 'Störung'),
-    ('Erweiterung/Störung', 'Erweiterung/Störung'),
-]
-
 
 class PortalUser(models.Model):
     name = models.CharField(max_length=100)
@@ -68,8 +63,6 @@ class PortalUser(models.Model):
         blank=True,
         default=list,
     )
-    typ_infomail = models.CharField(
-        max_length=30, choices=TYP_INFOMAIL_CHOICES)
     ews = models.BooleanField("EWS", default=False)
     bkt = models.BooleanField("BKT", default=False)
     prod = models.BooleanField("PROD", default=False)
@@ -89,6 +82,3 @@ class PortalUser(models.Model):
     def __str__(self):
         return f"{self.vorname} {self.name} ({self.racf_id})"
 
-    def save(self, *args, **kwargs):
-        self.typ_infomail = 'Erweiterung/Störung' if self.intern else 'Störung'
-        super().save(*args, **kwargs)
