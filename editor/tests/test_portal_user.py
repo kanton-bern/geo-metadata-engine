@@ -8,6 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from ..models import PortalUser
+from ..admin import PortalUserAdminForm
 
 
 def make_portal_user(**kwargs):
@@ -44,6 +45,40 @@ class PortalUserModelTest(TestCase):
         user = make_portal_user(typ_account=['AD', 'BE-Login'])
         user.refresh_from_db()
         self.assertEqual(user.typ_account, ['AD', 'BE-Login'])
+
+
+# ---------------------------------------------------------------------------
+# Admin form tests
+# ---------------------------------------------------------------------------
+
+class PortalUserAdminFormTest(TestCase):
+    def _form_data(self, **kwargs):
+        defaults = {
+            'name': 'Muster', 'vorname': 'Max',
+            'email_kontakt': 'k@example.com', 'email_user': 'u@example.com',
+            'abteilung': 'AFR', 'funktion': 'andere',
+            'eintritt_am': '2020-01-01', 'status': 'aktiv',
+            'intern': True, 'rolle': 'Viewer', 'racf_id': 'AA01',
+            'typ_account': [], 'ews': False, 'bkt': False, 'prod': False,
+            'status_nb': '', 'bemerkung': '',
+        }
+        defaults.update(kwargs)
+        return defaults
+
+    def test_duplicate_racf_id_on_new_user_raises_error(self):
+        make_portal_user(racf_id='AA01')
+        form = PortalUserAdminForm(data=self._form_data(racf_id='AA01'))
+        self.assertFalse(form.is_valid())
+        self.assertIn('racf_id', form.errors)
+
+    def test_unique_racf_id_on_new_user_is_valid(self):
+        form = PortalUserAdminForm(data=self._form_data(racf_id='AA01'))
+        self.assertTrue(form.is_valid())
+
+    def test_editing_existing_user_same_racf_id_is_valid(self):
+        user = make_portal_user(racf_id='AA01')
+        form = PortalUserAdminForm(data=self._form_data(racf_id='AA01'), instance=user)
+        self.assertTrue(form.is_valid())
 
 
 # ---------------------------------------------------------------------------
