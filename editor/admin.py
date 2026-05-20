@@ -256,13 +256,6 @@ def export_zu_bestellen_csv(modeladmin, request, queryset):
 export_zu_bestellen_csv.short_description = 'CSV Export: zu bestellen'
 
 
-def email_string_user(modeladmin, request, queryset):
-    addresses = queryset.order_by('name').values_list('email_user', flat=True)
-    return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
-
-email_string_user.short_description = 'E-Mail-String: email_user'
-
-
 def infomail_stoerung(modeladmin, request, queryset):
     addresses = PortalUser.objects.all().order_by('name').values_list('email_kontakt', flat=True)
     return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
@@ -304,7 +297,7 @@ benutzerliste_erstellen.short_description = 'Benutzerliste erstellen'
 class PortalUserAdmin(admin.ModelAdmin):
     form = PortalUserAdminForm
     change_list_template = 'admin/editor/portaluser/change_list.html'
-    actions = [export_zu_bestellen_csv, email_string_user, benutzerliste_erstellen, infomail_stoerung, infomail_erweiterung]
+    actions = [export_zu_bestellen_csv, benutzerliste_erstellen, infomail_stoerung, infomail_erweiterung]
     list_display = ('name', 'vorname', 'racf_id',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
     list_filter = ('status', 'abteilung', 'intern', 'rolle')
