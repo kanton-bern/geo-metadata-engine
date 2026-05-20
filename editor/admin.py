@@ -210,20 +210,6 @@ class ViewAdmin(admin.ModelAdmin):
 
 
 # ---------------------------------------------------------------------------
-# Registrierungen
-# ---------------------------------------------------------------------------
-admin.site.register(Thema)
-admin.site.register(Geopaeckli, GeopaeckliAdmin)
-admin.site.register(Ebene, EbeneAdmin)
-admin.site.register(Attribut, AttributAdmin)
-admin.site.register(Wertetabelle, WertetabelleAdmin)
-admin.site.register(Dienst, DienstAdmin)
-admin.site.register(View, ViewAdmin)
-admin.site.register(Tag, TagAdmin)
-admin.site.register(Trigger)
-
-
-# ---------------------------------------------------------------------------
 # Portal User
 # ---------------------------------------------------------------------------
 class PortalUserAdminForm(forms.ModelForm):
@@ -309,7 +295,6 @@ def benutzerliste_erstellen(modeladmin, request, queryset):
 benutzerliste_erstellen.short_description = 'CSV Export: Benutzerliste'
 
 
-@admin.register(PortalUser)
 class PortalUserAdmin(admin.ModelAdmin):
     form = PortalUserAdminForm
     change_list_template = 'admin/editor/portaluser/change_list.html'
@@ -430,3 +415,18 @@ class PortalUserAdmin(admin.ModelAdmin):
             'title': 'Portal Users importieren',
             'opts': self.model._meta,
         })
+
+
+# ---------------------------------------------------------------------------
+# Registrierungen
+# ---------------------------------------------------------------------------
+admin.site.register(Thema)
+admin.site.register(Geopaeckli, GeopaeckliAdmin)
+admin.site.register(Ebene, EbeneAdmin)
+admin.site.register(Attribut, AttributAdmin)
+admin.site.register(Wertetabelle, WertetabelleAdmin)
+admin.site.register(Dienst, DienstAdmin)
+admin.site.register(View, ViewAdmin)
+admin.site.register(Tag, TagAdmin)
+admin.site.register(Trigger)
+admin.site.register(PortalUser, PortalUserAdmin)
