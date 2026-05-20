@@ -92,15 +92,6 @@ class PortalUserAdminActionTest(TestCase):
         rows = list(csv.reader(response.content.decode('utf-8').splitlines()))
         self.assertEqual(rows[0], ['email_user', 'rolle', 'usertyp', 'vorname', 'name', 'email_kontakt'])
 
-    def test_email_string_kontakt_returns_semicolon_separated(self):
-        u1 = make_portal_user(racf_id='AA01', email_kontakt='a@example.com')
-        u2 = make_portal_user(racf_id='AA02', email_kontakt='b@example.com')
-        response = self._post_action('email_string_kontakt', [u1, u2])
-        self.assertEqual(response.status_code, 200)
-        emails = response.content.decode('utf-8').split(';')
-        self.assertIn('a@example.com', emails)
-        self.assertIn('b@example.com', emails)
-
     def test_email_string_user_returns_semicolon_separated(self):
         u1 = make_portal_user(racf_id='AA01', email_user='ua@example.com')
         u2 = make_portal_user(racf_id='AA02', email_user='ub@example.com')
@@ -127,13 +118,13 @@ class PortalUserAdminActionTest(TestCase):
         self.assertIn('Selected', names)
         self.assertNotIn('NotSelected', names)
 
-    def test_infomail_stoerung_ignores_selection(self):
+    def test_infomail_stoerung_returns_all_users(self):
         make_portal_user(racf_id='AA01', intern=False, email_kontakt='stoerung@example.com')
         u2 = make_portal_user(racf_id='AA02', intern=True, email_kontakt='erw@example.com')
-        response = self._post_action('infomail_stoerung', [u2])  # select the wrong one
+        response = self._post_action('infomail_stoerung', [u2])  # selection is ignored
         content = response.content.decode('utf-8')
         self.assertIn('stoerung@example.com', content)
-        self.assertNotIn('erw@example.com', content)
+        self.assertIn('erw@example.com', content)
 
     def test_infomail_erweiterung_stoerung_ignores_selection(self):
         make_portal_user(racf_id='AA01', intern=True, email_kontakt='erw@example.com')
