@@ -56,6 +56,7 @@ class PortalUser(models.Model):
     rolle = models.CharField(max_length=20, choices=ROLLE_CHOICES)
     racf_id = models.CharField("RACF-ID",
                                max_length=4,
+                               primary_key=True,
                                validators=[MinLengthValidator(4)],
                                )
     typ_account = ArrayField(
