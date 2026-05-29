@@ -203,11 +203,17 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('name_de', 'name_fr')
     search_fields = ('name_de',)
 
-
+# ---------------------------------------------------------------------------
+# View - Dienste als Filter & Anzahl Dienste anzeigen
+# ---------------------------------------------------------------------------
 class ViewAdmin(admin.ModelAdmin):
-    list_display = ('name_view', 'dienst')
-    list_filter = ('dienst',)
-
+    filter_horizontal = ('dienste',)
+    list_display = ('name_view', 'anzahl_dienste')
+    search_fields = ('name_view',)
+ 
+    def anzahl_dienste(self, obj):
+        return obj.dienste.count()
+    anzahl_dienste.short_description = "# Dienste"
 
 # ---------------------------------------------------------------------------
 # Portal User
