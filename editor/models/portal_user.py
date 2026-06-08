@@ -43,16 +43,18 @@ TYP_ACCOUNT_CHOICES = [
 
 
 class PortalUser(models.Model):
-    name = models.CharField(max_length=100)
-    vorname = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
+    vorname = models.CharField(max_length=200)
     email_kontakt = models.EmailField()
     email_user = models.EmailField()
-    abteilung = models.CharField(max_length=10, choices=ABTEILUNG_CHOICES)
+    abteilung = models.CharField(max_length=20, choices=ABTEILUNG_CHOICES)
     funktion = models.CharField(
         max_length=20, choices=FUNKTION_CHOICES, default='andere')
     eintritt_am = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     intern = models.BooleanField("Intern", default=True)
+    infomail_erweiterung = models.BooleanField(
+        "Infomail Erweiterung", default=True)
     rolle = models.CharField(max_length=20, choices=ROLLE_CHOICES)
     racf_id = models.CharField("RACF-ID",
                                max_length=4,
@@ -72,7 +74,7 @@ class PortalUser(models.Model):
     nb_pdf = models.FileField(
         "Nutzungsbedingungen PDF", upload_to='nb_pdfs/', blank=True, null=True)
     status_nb = models.CharField(
-        "Status Nutzungsbedingungen", max_length=100, blank=True)
+        "Status Nutzungsbedingungen", max_length=200, blank=True)
     bemerkung = models.TextField(blank=True)
 
     class Meta:
@@ -82,4 +84,3 @@ class PortalUser(models.Model):
 
     def __str__(self):
         return f"{self.vorname} {self.name} ({self.racf_id})"
-
