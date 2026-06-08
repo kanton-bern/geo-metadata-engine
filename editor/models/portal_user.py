@@ -19,14 +19,15 @@ ABTEILUNG_CHOICES = [
     ('AWE', 'AWE'),
     ('SFB', 'SFB'),
     ('NGA', 'NGA'),
+    ('Extern', 'Extern'),
 ]
 
 FUNKTION_CHOICES = [
-    ('andere', 'andere (siehe Bemerkung)'),
-    ('Hauptförster', 'Hauptförster'),
-    ('Nebenförster', 'Nebenförster'),
+    ('Staatsförster', 'Staatsförster'),
+    ('Gemeindeförster', 'Gemeindeförster'),
+    ('Forstfachperson Kliwa', 'Forstfachperson Kliwa'),
     ('Käfervogt', 'Käfervogt'),
-    ('Kontroller', 'Kontroller'),
+    ('andere', 'andere (siehe Bemerkung)'),
 ]
 
 ROLLE_CHOICES = [
@@ -46,10 +47,10 @@ class PortalUser(models.Model):
     name = models.CharField(max_length=200)
     vorname = models.CharField(max_length=200)
     email_kontakt = models.EmailField()
-    email_user = models.EmailField()
-    abteilung = models.CharField(max_length=20, choices=ABTEILUNG_CHOICES)
+    user = models.CharField(max_length=254, unique=True)
+    abteilung = models.CharField(max_length=10, choices=ABTEILUNG_CHOICES)
     funktion = models.CharField(
-        max_length=20, choices=FUNKTION_CHOICES, default='andere')
+        max_length=30, choices=FUNKTION_CHOICES, blank=True)
     eintritt_am = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     intern = models.BooleanField("Intern", default=True)
@@ -57,8 +58,9 @@ class PortalUser(models.Model):
         "Infomail Erweiterung", default=True)
     rolle = models.CharField(max_length=20, choices=ROLLE_CHOICES)
     racf_id = models.CharField("RACF-ID",
-                               max_length=4,
-                               primary_key=True,
+                               max_length=20,
+                               blank=True,
+                               null=True,
                                validators=[MinLengthValidator(4)],
                                )
     typ_account = ArrayField(
@@ -81,6 +83,13 @@ class PortalUser(models.Model):
         verbose_name = "Portal User"
         verbose_name_plural = "Portal Users"
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['racf_id'],
+                condition=models.Q(racf_id__isnull=False),
+                name='unique_racf_id_when_not_null',
+            )
+        ]
 
     def __str__(self):
-        return f"{self.vorname} {self.name} ({self.racf_id})"
+        return f"{self.vorname} {self.name} ({self.user})"
