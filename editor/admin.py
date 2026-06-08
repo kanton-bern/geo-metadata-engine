@@ -285,12 +285,12 @@ infomail_stoerung.short_description = 'E-Mail-String: Störung (alle)'
 
 
 def infomail_erweiterung(modeladmin, request, queryset):
-    addresses = PortalUser.objects.filter(intern=True).order_by(
+    addresses = PortalUser.objects.filter(infomail_erweiterung=True).order_by(
         'name').values_list('email_kontakt', flat=True)
     return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
 
 
-infomail_erweiterung.short_description = 'E-Mail-String: Erweiterung (intern)'
+infomail_erweiterung.short_description = 'E-Mail-String: Erweiterung'
 
 
 def benutzerliste_erstellen(modeladmin, request, queryset):
@@ -300,14 +300,14 @@ def benutzerliste_erstellen(modeladmin, request, queryset):
     writer.writerow([
         'name', 'vorname', 'email_kontakt', 'email_user',
         'abteilung', 'funktion', 'eintritt_am', 'status',
-        'intern', 'rolle', 'racf_id', 'typ_account',
+        'intern', 'infomail_erweiterung', 'rolle', 'racf_id', 'typ_account',
         'ews', 'bkt', 'prod', 'benutzertyp', 'status_nb', 'bemerkung',
     ])
     for u in queryset.order_by('name'):
         writer.writerow([
             u.name, u.vorname, u.email_kontakt, u.email_user,
             u.abteilung, u.funktion, u.eintritt_am, u.status,
-            u.intern, u.rolle, u.racf_id,
+            u.intern, u.infomail_erweiterung, u.rolle, u.racf_id,
             ','.join(u.typ_account),
             u.ews, u.bkt, u.prod, u.benutzertyp, u.status_nb, u.bemerkung,
         ])
@@ -326,7 +326,7 @@ class PortalUserAdmin(admin.ModelAdmin):
     ]
     list_display = ('name', 'vorname', 'racf_id', 'email_user',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
-    list_filter = ('status', 'abteilung', 'intern', 'rolle', 'ews', 'bkt', 'prod')
+    list_filter = ('status', 'abteilung', 'intern', 'infomail_erweiterung', 'rolle', 'ews', 'bkt', 'prod')
     search_fields = ('name', 'vorname', 'racf_id', 'email_user',
                      'status', 'typ_account')
     fieldsets = (
@@ -337,7 +337,7 @@ class PortalUserAdmin(admin.ModelAdmin):
             'fields': ('abteilung', 'funktion', 'eintritt_am'),
         }),
         ('Status & Rolle', {
-            'fields': ('status', 'intern', 'rolle'),
+            'fields': ('status', 'intern', 'infomail_erweiterung', 'rolle'),
         }),
         ('Technisches', {
             'fields': ('racf_id', 'typ_account'),
@@ -410,6 +410,7 @@ class PortalUserAdmin(admin.ModelAdmin):
                             'eintritt_am': eintritt_am,
                             'status': row['status'].strip(),
                             'intern': intern,
+                            'infomail_erweiterung': parse_bool(row.get('infomail_erweiterung', True)),
                             'rolle': row['rolle'].strip(),
                             'typ_account': typ_account,
                             'ews': parse_bool(row.get('ews', False)),

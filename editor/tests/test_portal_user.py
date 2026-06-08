@@ -41,6 +41,10 @@ class PortalUserModelTest(TestCase):
         user = make_portal_user()
         self.assertTrue(user.intern)
 
+    def test_infomail_erweiterung_defaults_to_true(self):
+        user = make_portal_user()
+        self.assertTrue(user.infomail_erweiterung)
+
     def test_racf_id_is_primary_key(self):
         user = make_portal_user(racf_id='AA01')
         self.assertEqual(user.pk, 'AA01')
@@ -192,9 +196,9 @@ class PortalUserAdminActionTest(TestCase):
         self.assertIn('stoerung@example.com', content)
         self.assertIn('erw@example.com', content)
 
-    def test_infomail_erweiterung_returns_only_intern_users(self):
-        make_portal_user(racf_id='AA01', intern=True, email_kontakt='erw@example.com')
-        u2 = make_portal_user(racf_id='AA02', intern=False, email_kontakt='extern@example.com')
+    def test_infomail_erweiterung_returns_only_infomail_erweiterung_users(self):
+        make_portal_user(racf_id='AA01', infomail_erweiterung=True, email_kontakt='erw@example.com')
+        u2 = make_portal_user(racf_id='AA02', infomail_erweiterung=False, email_kontakt='extern@example.com')
         response = self._post_action('infomail_erweiterung', [u2])  # selection is ignored
         content = response.content.decode('utf-8')
         self.assertIn('erw@example.com', content)
@@ -216,7 +220,7 @@ class PortalUserImportTest(TestCase):
         fieldnames = [
             'name', 'vorname', 'email_kontakt', 'email_user',
             'abteilung', 'funktion', 'eintritt_am', 'status',
-            'intern', 'rolle', 'racf_id', 'typ_account',
+            'intern', 'infomail_erweiterung', 'rolle', 'racf_id', 'typ_account',
             'ews', 'bkt', 'prod', 'benutzertyp', 'status_nb', 'bemerkung',
         ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -229,7 +233,7 @@ class PortalUserImportTest(TestCase):
             'name': 'Muster', 'vorname': 'Max',
             'email_kontakt': 'k@example.com', 'email_user': 'u@example.com',
             'abteilung': 'AFR', 'funktion': '', 'eintritt_am': '2020-01-01',
-            'status': 'aktiv', 'intern': 'True', 'rolle': 'Viewer',
+            'status': 'aktiv', 'intern': 'True', 'infomail_erweiterung': 'True', 'rolle': 'Viewer',
             'racf_id': 'ABCD', 'typ_account': 'AD',
             'ews': 'False', 'bkt': 'False', 'prod': 'False',
             'benutzertyp': 'Creator', 'status_nb': '', 'bemerkung': '',
