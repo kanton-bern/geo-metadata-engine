@@ -13,6 +13,7 @@ from django.urls import path
 from datetime import datetime
 import csv
 import io
+from django.db import IntegrityError
 
 admin.site.site_header = "GEO Metadaten Engine"
 admin.site.site_title = "GEO Metadaten Engine"
@@ -229,16 +230,6 @@ class PortalUserAdminForm(forms.ModelForm):
         model = PortalUser
         fields = '__all__'
 
-    def clean_racf_id(self):
-        racf_id = self.cleaned_data.get('racf_id')
-        qs = PortalUser.objects.filter(racf_id=racf_id)
-        if self.instance and self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            raise forms.ValidationError(
-                f'Ein Benutzer mit der RACF-ID "{racf_id}" existiert bereits.'
-            )
-        return racf_id
 
 
 def _export_zu_bestellen_csv(system):
@@ -251,11 +242,11 @@ def _export_zu_bestellen_csv(system):
             f'_GIS_Hub_Erfassung_User_AD_BE-Login_{system.upper()}.csv'
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         writer = csv.writer(response)
-        writer.writerow(['E-Mail', 'Rolle', 'Benutzertyp',
+        writer.writerow(['User', 'Rolle', 'Benutzertyp',
                         'Vorname', 'Nachname', 'Benutzerkennung'])
         for u in users:
-            writer.writerow([u.email_user, u.rolle, u.benutzertyp,
-                            u.vorname, u.name, u.racf_id])
+            writer.writerow([u.user, u.rolle, u.benutzertyp,
+                            u.vorname, u.name, u.racf_id or ''])
         return response
     action.__name__ = f'export_zu_bestellen_{system}_csv'
     action.short_description = f'CSV Export: User zu bestellen ({system.upper()})'
@@ -276,7 +267,7 @@ email_string_kontakt.short_description = 'E-Mail-String: Kontakt'
 
 
 def infomail_stoerung(modeladmin, request, queryset):
-    addresses = PortalUser.objects.all().order_by(
+    addresses = PortalUser.objects.exclude(status='inaktiv').order_by(
         'name').values_list('email_kontakt', flat=True)
     return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
 
@@ -285,8 +276,8 @@ infomail_stoerung.short_description = 'E-Mail-String: Störung (alle)'
 
 
 def infomail_erweiterung(modeladmin, request, queryset):
-    addresses = PortalUser.objects.filter(infomail_erweiterung=True).order_by(
-        'name').values_list('email_kontakt', flat=True)
+    addresses = PortalUser.objects.filter(infomail_erweiterung=True).exclude(
+        status='inaktiv').order_by('name').values_list('email_kontakt', flat=True)
     return HttpResponse(';'.join(addresses), content_type='text/plain; charset=utf-8')
 
 
@@ -298,16 +289,16 @@ def benutzerliste_erstellen(modeladmin, request, queryset):
     response['Content-Disposition'] = 'attachment; filename="Benutzerliste_GIS_Hub.csv"'
     writer = csv.writer(response)
     writer.writerow([
-        'name', 'vorname', 'email_kontakt', 'email_user',
+        'name', 'vorname', 'email_kontakt', 'user',
         'abteilung', 'funktion', 'eintritt_am', 'status',
         'intern', 'infomail_erweiterung', 'rolle', 'racf_id', 'typ_account',
         'ews', 'bkt', 'prod', 'benutzertyp', 'status_nb', 'bemerkung',
     ])
     for u in queryset.order_by('name'):
         writer.writerow([
-            u.name, u.vorname, u.email_kontakt, u.email_user,
+            u.name, u.vorname, u.email_kontakt, u.user,
             u.abteilung, u.funktion, u.eintritt_am, u.status,
-            u.intern, u.infomail_erweiterung, u.rolle, u.racf_id,
+            u.intern, u.infomail_erweiterung, u.rolle, u.racf_id or '',
             ','.join(u.typ_account),
             u.ews, u.bkt, u.prod, u.benutzertyp, u.status_nb, u.bemerkung,
         ])
@@ -324,14 +315,14 @@ class PortalUserAdmin(admin.ModelAdmin):
         export_zu_bestellen_ews_csv, export_zu_bestellen_bkt_csv, export_zu_bestellen_prod_csv,
         benutzerliste_erstellen, email_string_kontakt, infomail_stoerung, infomail_erweiterung,
     ]
-    list_display = ('name', 'vorname', 'racf_id', 'email_user',
+    list_display = ('name', 'vorname', 'racf_id', 'user',
                     'abteilung', 'status', 'rolle', 'intern', "ews", "bkt", "prod")
     list_filter = ('status', 'abteilung', 'intern', 'infomail_erweiterung', 'rolle', 'ews', 'bkt', 'prod')
-    search_fields = ('name', 'vorname', 'racf_id', 'email_user',
+    search_fields = ('name', 'vorname', 'racf_id', 'user',
                      'status', 'typ_account')
     fieldsets = (
         (None, {
-            'fields': ('name', 'vorname', 'email_kontakt', 'email_user'),
+            'fields': ('name', 'vorname', 'email_kontakt', 'user'),
         }),
         ('Organisation', {
             'fields': ('abteilung', 'funktion', 'eintritt_am'),
@@ -373,8 +364,14 @@ class PortalUserAdmin(admin.ModelAdmin):
                 csv_file.read().decode('utf-8')))
             created = updated = errors = 0
             error_details = []
+            updated_users = []
+
+            def parse_bool(val):
+                return str(val).strip().lower() in ('true', '1', 'ja', 'yes')
 
             for i, row in enumerate(reader, start=2):
+                user_id = row.get('user', '').strip()
+                label = user_id or f'Zeile {i}'
                 try:
                     intern_raw = str(row.get('intern', 'True')).strip().lower()
                     intern = intern_raw in ('true', 'intern', '1', 'ja')
@@ -395,16 +392,15 @@ class PortalUserAdmin(admin.ModelAdmin):
                     if eintritt_am is None:
                         raise ValueError(f"Ungültiges Datum: '{eintritt_raw}'")
 
-                    def parse_bool(val):
-                        return str(val).strip().lower() in ('true', '1', 'ja', 'yes')
+                    if not user_id:
+                        raise ValueError("Pflichtfeld 'user' fehlt oder ist leer")
 
                     _, was_created = PortalUser.objects.update_or_create(
-                        racf_id=row['racf_id'].strip(),
+                        user=user_id,
                         defaults={
                             'name': row['name'].strip(),
                             'vorname': row['vorname'].strip(),
                             'email_kontakt': row['email_kontakt'].strip(),
-                            'email_user': row['email_user'].strip(),
                             'abteilung': row['abteilung'].strip(),
                             'funktion': row.get('funktion', '').strip(),
                             'eintritt_am': eintritt_am,
@@ -412,6 +408,7 @@ class PortalUserAdmin(admin.ModelAdmin):
                             'intern': intern,
                             'infomail_erweiterung': parse_bool(row.get('infomail_erweiterung', True)),
                             'rolle': row['rolle'].strip(),
+                            'racf_id': row.get('racf_id', '').strip() or None,
                             'typ_account': typ_account,
                             'ews': parse_bool(row.get('ews', False)),
                             'bkt': parse_bool(row.get('bkt', False)),
@@ -424,16 +421,39 @@ class PortalUserAdmin(admin.ModelAdmin):
                         created += 1
                     else:
                         updated += 1
+                        updated_users.append({
+                            'user': user_id,
+                            'name': f"{row.get('vorname', '').strip()} {row.get('name', '').strip()}".strip(),
+                        })
+                except IntegrityError as e:
+                    errors += 1
+                    cause = str(e.__cause__ or e)
+                    if 'unique' in cause.lower() or 'duplicate' in cause.lower():
+                        detail = next(
+                            (l.replace('DETAIL:', '').strip() for l in cause.splitlines() if 'DETAIL:' in l),
+                            'Doppelter Wert'
+                        )
+                        error_details.append({'zeile': i, 'label': label, 'grund': f"Doppelter Wert: {detail}"})
+                    else:
+                        error_details.append({'zeile': i, 'label': label, 'grund': f"Datenbankfehler: {cause.splitlines()[0]}"})
+                except KeyError as e:
+                    errors += 1
+                    error_details.append({'zeile': i, 'label': label, 'grund': f"Pflichtfeld fehlt: {e}"})
+                except ValueError as e:
+                    errors += 1
+                    error_details.append({'zeile': i, 'label': label, 'grund': str(e)})
                 except Exception as e:
                     errors += 1
-                    error_details.append(f"Zeile {i}: {e}")
+                    error_details.append({'zeile': i, 'label': label, 'grund': str(e).splitlines()[0]})
 
-            level = 'success' if not errors else 'warning'
-            self.message_user(
-                request, f"{created} erstellt, {updated} aktualisiert, {errors} Fehler.", level=level)
-            for detail in error_details:
-                self.message_user(request, detail, level='error')
-            return redirect('../')
+            return TemplateResponse(request, 'admin/editor/portaluser/import.html', {
+                **self.admin_site.each_context(request),
+                'title': 'Portal Users importieren',
+                'opts': self.model._meta,
+                'result': {'created': created, 'updated': updated, 'errors': errors},
+                'error_details': error_details,
+                'updated_users': updated_users,
+            })
 
         return TemplateResponse(request, 'admin/editor/portaluser/import.html', {
             **self.admin_site.each_context(request),
