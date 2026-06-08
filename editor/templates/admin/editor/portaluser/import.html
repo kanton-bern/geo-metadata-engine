@@ -1,33 +1,90 @@
-{% extends "admin/base_site.html" %} {% load i18n %} {% block breadcrumbs %}
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
 <div class="breadcrumbs">
   <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
   &rsaquo;
   <a href="{% url 'admin:editor_portaluser_changelist' %}">Portal Users</a>
   &rsaquo; CSV importieren
 </div>
-{% endblock %} {% block content %}
-<p>
-  Erwartet eine CSV-Datei mit den Spalten:<br />
-  <code
-    >name, vorname, email_kontakt, email_user, abteilung, funktion, eintritt_am,
-    status, intern, rolle, racf_id, typ_account, ews, bkt, prod,
-    benutzertyp, status_nb, bemerkung</code
-  >
-</p>
-<p>
-  Vorhandene Einträge werden anhand der <strong>RACF-ID</strong> aktualisiert,
-  neue Einträge werden erstellt. Das Datum <code>eintritt_am</code> akzeptiert
-  die Formate <code>YYYY-MM-DD</code> und <code>DD.MM.YYYY</code>.
-</p>
-<form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  <div class="form-row">
-    <label for="csv_file">CSV-Datei:</label>
-    <input type="file" name="csv_file" id="csv_file" accept=".csv" required />
-  </div>
-  <div class="submit-row">
-    <input type="submit" value="Importieren" class="default" />
-    <a href="{% url 'admin:editor_portaluser_changelist' %}">Abbrechen</a>
-  </div>
-</form>
+{% endblock %}
+
+{% block content %}
+
+{% if result %}
+  <h2>Import abgeschlossen</h2>
+  <p>
+    <strong>{{ result.created }}</strong> erstellt &nbsp;|&nbsp;
+    <strong>{{ result.updated }}</strong> aktualisiert &nbsp;|&nbsp;
+    <strong>{{ result.errors }}</strong> Fehler
+  </p>
+
+  {% if updated_users %}
+  <h3>Aktualisierte Benutzer ({{ updated_users|length }})</h3>
+  <table>
+    <thead>
+      <tr><th>User</th><th>Name</th></tr>
+    </thead>
+    <tbody>
+      {% for u in updated_users %}
+      <tr><td>{{ u.user }}</td><td>{{ u.name }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if error_details %}
+  <h3>Fehlerhafte Zeilen</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Zeile</th>
+        <th>User</th>
+        <th>Grund</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for err in error_details %}
+      <tr>
+        <td>{{ err.zeile }}</td>
+        <td>{{ err.label }}</td>
+        <td>{{ err.grund }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <p style="margin-top: 1em;">
+    <a href="{% url 'admin:editor_portaluser_changelist' %}" class="button">Zurück zur Übersicht</a>
+    &nbsp;
+    <a href="">Weitere Datei importieren</a>
+  </p>
+
+{% else %}
+  <p>
+    Erwartet eine CSV-Datei mit den Spalten:<br />
+    <code>name, vorname, email_kontakt, user, abteilung, funktion, eintritt_am,
+    status, intern, infomail_erweiterung, rolle, racf_id, typ_account,
+    ews, bkt, prod, benutzertyp, status_nb, bemerkung</code>
+  </p>
+  <p>
+    Vorhandene Einträge werden anhand des Feldes <strong>user</strong> aktualisiert,
+    neue Einträge werden erstellt. Das Datum <code>eintritt_am</code> akzeptiert
+    die Formate <code>YYYY-MM-DD</code> und <code>DD.MM.YYYY</code>.
+  </p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-row">
+      <label for="csv_file">CSV-Datei:</label>
+      <input type="file" name="csv_file" id="csv_file" accept=".csv" required />
+    </div>
+    <div class="submit-row">
+      <input type="submit" value="Importieren" class="default" />
+      <a href="{% url 'admin:editor_portaluser_changelist' %}">Abbrechen</a>
+    </div>
+  </form>
+{% endif %}
+
 {% endblock %}
