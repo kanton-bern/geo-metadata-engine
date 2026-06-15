@@ -96,10 +96,13 @@ A [Dockerfile](./Dockerfile) is available for containerised deployments.
 docker build -t geo_metadata_engine .
 
 # Run the container
+# --env-file .env passes the runtime configuration (SECRET_KEY, DB_*, etc.) into
+# the container. It is required: the image does not bundle .env (see .dockerignore),
+# so without it Django has no settings and gunicorn workers hang/time out.
 # --network=host is required on Linux so the container can reach the PostgreSQL
 # instance running on the host machine (localhost inside the container refers
 # to the container itself, not the host).
-docker run -d --network=host geo_metadata_engine
+docker run -d --network=host --env-file .env geo_metadata_engine
 ```
 
 ## Contributing to GEO Metadata Engine
