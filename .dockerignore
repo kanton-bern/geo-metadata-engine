@@ -1,0 +1,40 @@
+# Version control
+.git
+.gitignore
+
+# Secrets / environment
+.env
+*.env
+
+# Local databases
+*.sqlite3
+*.sqlite3-journal
+
+# Data dumps / user uploads
+editor_backup.json
+media/
+
+# Collected static files (regenerated at build time via collectstatic)
+staticfiles/
+
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Docs and project meta (not needed in the runtime image)
+docs/
+*.md
+LICENSE
