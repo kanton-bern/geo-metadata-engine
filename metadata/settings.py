@@ -18,9 +18,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG")
+# Defaults to False; must be explicitly set to "True" in the environment to enable.
+DEBUG = os.environ.get("DEBUG", "") == "True"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+# Comma-separated list of allowed hosts, e.g. "example.ch,www.example.ch".
+# Defaults to localhost for local development.
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+
+# Comma-separated list of trusted origins for CSRF, with scheme,
+# e.g. "https://example.ch,https://www.example.ch". Required when serving over
+# HTTPS behind an ingress/proxy. Empty by default for local development.
+CSRF_TRUSTED_ORIGINS = [
+    origin
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin
+]
 
 
 # Application definition
