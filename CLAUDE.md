@@ -9,12 +9,12 @@ BGI Metadata Editor — a Django-based metadata management system for the WIS-BE
 ## Development Setup
 
 ```bash
-conda create -n bgi_metadata python=3.12
+conda create -n bgi_metadata python=3.14
 conda activate bgi_metadata
-conda install --yes --file requirements.txt
+pip install -r requirements.txt
 ```
 
-Configure a `.env` file (see `.env` for reference — required variables: `SECRET_KEY`, `DEBUG`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_PORT`).
+Configure a `.env` file (see `.env` for reference — required variables: `SECRET_KEY`, `DEBUG`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_PORT`). Optional (sensible defaults for local dev): `ALLOWED_HOSTS` (defaults to `127.0.0.1,localhost`) and `CSRF_TRUSTED_ORIGINS` (empty). The `ADFS_*` variables are only needed once ADFS authentication is activated (see `docs/adfs-oidc-setup.md`).
 
 ```bash
 python manage.py migrate
@@ -79,4 +79,4 @@ CD pipeline via GitLab CI:
 - Push to `dev` → deploys to `bgi-metadata-dev` Kubernetes namespace
 - Push to `main` → deploys to `bgi-metadata-prod` Kubernetes namespace
 
-Dockerfile uses a multi-stage Python 3.12-slim build; static files served by WhiteNoise.
+Dockerfile uses a multi-stage Python 3.14-slim build; static files served by WhiteNoise.
