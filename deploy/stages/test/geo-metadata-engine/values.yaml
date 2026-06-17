@@ -1,0 +1,16 @@
+ingresses:
+  ingress:
+    rules:
+      - host: geo-metadata-engine-dev.apps.be.ch
+        http:
+          paths:
+            - backend:
+                serviceNameSuffix: geo-metadata-engine-http
+                servicePort: 8080
+              path: "/"
+        secretName: "geo-metadata-engine-tls"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      cert-manager.io/cluster-issuer: swisssign-kb
+      cert-manager.io/common-name: geo-metadata-engine-dev.apps.be.ch

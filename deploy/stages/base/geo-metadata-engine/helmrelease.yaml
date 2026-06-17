@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: engine-service
+  name: geo-metadata-engine
   labels:
     prometheus.alerting.bedag.ch: "false"
 spec:
@@ -14,7 +14,7 @@ spec:
         kind: HelmRepository
         name: bedag-public
         namespace: flux-public
-  releaseName: engine-service-${stage}
+  releaseName: geo-metadata-engine-${stage}
   install:
     remediation:
       # dont retry install
@@ -29,11 +29,11 @@ spec:
       remediateLastFailure: false
   valuesFrom:
     - kind: ConfigMap
-      name: engine-service-values
+      name: geo-metadata-engine-values
       optional: true
     - kind: ConfigMap
-      name: engine-service-stage-values
+      name: geo-metadata-engine-stage-values
       optional: true
     - kind: Secret
-      name: engine-service-stage-secrets
+      name: geo-metadata-engine-stage-secrets
       optional: true

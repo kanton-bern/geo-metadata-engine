@@ -9,4 +9,4 @@ labels:
       customer.gitops.bedag.ch/stage: ${stage}
 resources:
   - ../base
-  - engine-service
+  - geo-metadata-engine

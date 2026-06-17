@@ -2,10 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: as6-geo-metadaten-${stage}
 resources:
-  - ../../base/engine-service/
+  - ../../base/geo-metadata-engine/
   - secrets/
 configMapGenerator:
-- name: engine-service-stage-values
+- name: geo-metadata-engine-stage-values
   files:
   - values.yaml
   options:

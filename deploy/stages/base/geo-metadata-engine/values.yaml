@@ -1,11 +1,11 @@
-nameOverride: simple-status
+nameOverride: geo-metadata-engine
 
 includes:
   ingress: true
   service: true
   deployment: true
   statefulset: false
-  envSecret: false
+  envSecret: true
   envConfigMap: false
   files: false
   configFiles: false
@@ -30,10 +30,10 @@ ingresses:
     tls:
       type: "existing"
       existing:
-        secret: simple-status-tls
+        secret: geo-metadata-engine-tls
 
 components:
-  simplestatus:
+  geo-metadata-engine:
     services:
       http:
         deploy: true
@@ -47,7 +47,7 @@ components:
         "customer.gitops.bedag.ch/hlq": "a99"
         "customer.gitops.bedag.ch/stage": "${stage}"
       containers:
-        simplestatus:
+        geo-metadata-engine:
           image:
             repository: artifacts.bedag.cloud/apc/simple-status
             tag: v0.0.7
@@ -55,21 +55,12 @@ components:
             - name: http
               containerPort: 8080
           env:
-            # - name: DB_CONN_STR
-            #   value: "postgres://user:password@server:port/schema"
-            # - name: S3_ENDPOINT
-            #   value: "https://s3.ch:10443"
-            # - name: AWS_ACCESS_KEY_ID
-            #   value: "myaccesskey"
-            # - name: AWS_SECRET_ACCESS_KEY
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: s3-secrets               # Secret muss entsprechend erstellt werden
-            #       key: access-key
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+            - name: DEBUG
+              value: False
+            - name: ALLOWED_HOSTS
+              value: 127.0.0.1,localhost
+            - name: CSRF_TRUSTED_ORIGINS
+              value: ""
           containerSecurityContext:
             enabled: true
             allowPrivilegeEscalation: false
