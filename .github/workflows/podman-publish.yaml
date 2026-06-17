@@ -1,0 +1,44 @@
+name: Build and Push Podman Image
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Der Image-Name wird komplett in Kleinbuchstaben in der GHCR erwartet
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: develop
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Extract short Git SHA
+        id: sha
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Create Tag
+        id: meta
+        run: |
+          echo "tag=develop-{{date 'YYYYMMDDHHmmss'}}-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
+
+      - name: Build Image with Podman
+        run: |
+          podman build -t ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }} .
+
+      - name: Push Image to GHCR
+        run: |
+          podman push ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
