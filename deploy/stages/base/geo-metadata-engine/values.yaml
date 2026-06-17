@@ -56,9 +56,9 @@ components:
               containerPort: 8080
           env:
             - name: DEBUG
-              value: False
+              value: "False"
             - name: ALLOWED_HOSTS
-              value: 127.0.0.1,localhost
+              value: "127.0.0.1,localhost"
             - name: CSRF_TRUSTED_ORIGINS
               value: ""
           containerSecurityContext:
