@@ -1,6 +1,9 @@
 name: Build and Push Podman Image
 
 on:
+  push:
+    branches:
+      - develop
   workflow_dispatch:
 
 env:
@@ -33,7 +36,7 @@ jobs:
       - name: Create Tag
         id: meta
         run: |
-          echo "tag=develop-{{date 'YYYYMMDDHHmmss'}}-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
+          echo "tag=develop-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
 
       - name: Build Image with Podman
         run: |
