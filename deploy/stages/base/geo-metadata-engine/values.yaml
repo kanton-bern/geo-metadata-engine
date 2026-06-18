@@ -49,8 +49,8 @@ components:
       containers:
         geo-metadata-engine:
           image:
-            repository: artifacts.bedag.cloud/apc/simple-status
-            tag: v0.0.7
+            repository: artifacts.bedag.cloud/ghcr/kanton-bern/kanton-bern/geo-metadata-engine
+            tag: latest
           containerPorts:
             - name: http
               containerPort: 8080

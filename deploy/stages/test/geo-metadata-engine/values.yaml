@@ -14,3 +14,11 @@ ingresses:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       cert-manager.io/cluster-issuer: swisssign-kb
       cert-manager.io/common-name: geo-metadata-engine-dev.apps.be.ch
+
+components:
+  geo-metadata-engine:
+    controller:
+      containers:
+        geo-metadata-engine:
+          image:
+            tag: develop-20260617124326-70ef45c
