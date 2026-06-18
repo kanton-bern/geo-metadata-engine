@@ -6,7 +6,7 @@ ingresses:
           paths:
             - backend:
                 serviceNameSuffix: geo-metadata-engine-http
-                servicePort: 8080
+                servicePort: 8000
               path: "/"
         secretName: "geo-metadata-engine-tls"
     annotations:
@@ -22,3 +22,10 @@ components:
         geo-metadata-engine:
           image:
             tag: develop-20260617124326-70ef45c
+          env:
+            - name: DEBUG
+              value: "False"
+            - name: ALLOWED_HOSTS
+              value: "127.0.0.1,localhost"
+            - name: CSRF_TRUSTED_ORIGINS
+              value: "https://geo-metadata-engine-dev.apps.be.ch,http://localhost,http://127.0.0.1"

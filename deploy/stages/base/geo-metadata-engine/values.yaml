@@ -37,8 +37,8 @@ components:
     services:
       http:
         deploy: true
-        port: 8080
-        targetPort: 8080
+        port: 8000
+        targetPort: 8000
     controller:
       deploy: true
       replicas: 1
@@ -53,14 +53,7 @@ components:
             tag: latest
           containerPorts:
             - name: http
-              containerPort: 8080
-          env:
-            - name: DEBUG
-              value: "False"
-            - name: ALLOWED_HOSTS
-              value: "127.0.0.1,localhost"
-            - name: CSRF_TRUSTED_ORIGINS
-              value: ""
+              containerPort: 8000
           containerSecurityContext:
             enabled: true
             allowPrivilegeEscalation: false
