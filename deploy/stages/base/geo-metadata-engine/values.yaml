@@ -26,7 +26,7 @@ secrets:
 ingresses:
   ingress:
     deploy: true
-    ingressClassName: "kb-sh"
+    ingressClassName: "kb-ka"
     tls:
       type: "existing"
       existing:
