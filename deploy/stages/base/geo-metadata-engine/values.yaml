@@ -44,7 +44,7 @@ components:
       replicas: 1
       type: Deployment
       extraLabels:
-        "customer.gitops.bedag.ch/hlq": "a99"
+        "customer.gitops.bedag.ch/hlq": "as6"
         "customer.gitops.bedag.ch/stage": "${stage}"
       containers:
         geo-metadata-engine:
