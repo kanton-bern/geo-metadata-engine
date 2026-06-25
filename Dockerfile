@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # stage 2: production stage
 FROM python:3.14-slim
 
-RUN useradd -m -r appuser && \
+RUN useradd -m -r -u 10001 appuser && \
     mkdir /app && \
     chown -R appuser /app
 
@@ -45,6 +45,7 @@ RUN python manage.py collectstatic --noinput
 # set the environment variables to optimize python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV HOME=/home/appuser
 
 # set the user to appuser
 USER appuser
