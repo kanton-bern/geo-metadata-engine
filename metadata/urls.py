@@ -17,11 +17,23 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.urls import include, path
+
+
+# Keep a reference to the unwrapped admin login view so it stays reachable as a
+# local username/password fallback for superusers (break-glass access if ADFS is
+# unavailable).
+admin_local_login = admin.site.login
+
+# Force the default admin login to redirect to LOGIN_URL (ADFS) instead of
+# rendering the built-in Django username/password form.
+admin.site.login = login_required(admin.site.login)
 
 
 urlpatterns = [
     path("", include("editor.urls", namespace="editor")),
+    path("admin/local-login/", admin_local_login, name="admin-local-login"),
     path("admin/", admin.site.urls, name="admin"),
     path("oauth2/", include("django_auth_adfs.urls")),
 ]
