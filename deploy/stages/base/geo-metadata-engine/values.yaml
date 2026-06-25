@@ -49,7 +49,7 @@ components:
       containers:
         geo-metadata-engine:
           image:
-            repository: artifacts.bedag.cloud/ghcr/kanton-bern/kanton-bern/geo-metadata-engine
+            repository: artifacts.bedag.cloud/ghcr/kanton-bern/geo-metadata-engine
             tag: latest
           containerPorts:
             - name: http
