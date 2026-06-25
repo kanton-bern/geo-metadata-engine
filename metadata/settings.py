@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
-    # "django_auth_adfs",
+    "django_auth_adfs",
 ]
 
 MIDDLEWARE = [
@@ -154,24 +154,25 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# AUTHENTICATION_BACKENDS = [
-#     "django_auth_adfs.backend.AdfsAuthCodeBackend",
-# ]
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "django_auth_adfs.backend.AdfsAuthCodeBackend",
+]
 
-# AUTH_ADFS = {
-#     "SERVER": os.environ.get("ADFS_SERVER"),
-#     "CLIENT_ID": os.environ.get("ADFS_CLIENT_ID"),
-#     "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
-#     "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
-#     "CA_BUNDLE": True,
-#    "CLAIM_MAPPING": {
-#        "first_name": "given_name",
-#        "last_name": "family_name",
-#        "email": "email",
-#    },
-#    "GROUP_CLAIM": "group",
-#    "MIRROR_GROUPS": True,
-# }
+AUTH_ADFS = {
+    "SERVER": os.environ.get("ADFS_SERVER"),
+    "CLIENT_ID": os.environ.get("ADFS_CLIENT_ID"),
+    "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
+    "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
+    "CA_BUNDLE": True,
+    "CLAIM_MAPPING": {
+        "first_name": "given_name",
+        "last_name": "family_name",
+        "email": "email",
+    },
+    "GROUP_CLAIM": "group",
+    "MIRROR_GROUPS": True,
+}
 
-# LOGIN_URL = "django_auth_adfs:login"
-# LOGIN_REDIRECT_URL = "/"
+LOGIN_URL = "django_auth_adfs:login"
+LOGIN_REDIRECT_URL = "/"

@@ -23,7 +23,7 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("editor.urls", namespace="editor")),
     path("admin/", admin.site.urls, name="admin"),
-    # path("oauth2/", include("django_auth_adfs.urls")),
+    path("oauth2/", include("django_auth_adfs.urls")),
 ]
 
 if settings.DEBUG:
