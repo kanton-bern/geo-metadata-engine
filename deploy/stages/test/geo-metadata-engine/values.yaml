@@ -24,7 +24,7 @@ components:
             tag: develop-20260626051100-547604a
           env:
             - name: DEBUG
-              value: "False"
+              value: "True"
             - name: ALLOWED_HOSTS
               value: "127.0.0.1,localhost,geo-metadata-engine-dev.apps.be.ch"
             - name: CSRF_TRUSTED_ORIGINS
