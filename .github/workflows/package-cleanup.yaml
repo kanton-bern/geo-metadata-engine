@@ -1,0 +1,23 @@
+name: Cleanup Container Image Versions
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: only show what would be deleted, delete nothing"
+        type: boolean
+        default: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete untagged image versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: "geo-metadata-engine"
+          package-type: "container"
+          delete-only-untagged-versions: true
+          min-versions-to-keep: 2
+          dry-run: ${{ inputs.dry_run }}
