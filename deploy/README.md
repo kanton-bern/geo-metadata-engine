@@ -1,4 +1,4 @@
-# Projekt as6
+# Projekt act
 
 # GitFlow
 
