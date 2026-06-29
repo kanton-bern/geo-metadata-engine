@@ -34,6 +34,11 @@ CSRF_TRUSTED_ORIGINS = [
     if origin
 ]
 
+# TLS is terminated at the ingress/router, so requests reach the app over plain
+# HTTP internally. Trust the X-Forwarded-Proto header so Django builds absolute
+# URLs (e.g. the ADFS OAuth redirect_uri) with the correct https scheme.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # Application definition
 
