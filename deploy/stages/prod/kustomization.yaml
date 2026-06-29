@@ -5,7 +5,7 @@ labels:
   - includeSelectors: true # mimics old 'commonLabels' behaviour
     includeTemplates: false
     pairs:
-      customer.gitops.bedag.ch/hlq: as6
+      customer.gitops.bedag.ch/hlq: act
       customer.gitops.bedag.ch/stage: ${stage}
 resources:
   - ../base
