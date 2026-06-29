@@ -167,6 +167,7 @@ AUTHENTICATION_BACKENDS = [
 AUTH_ADFS = {
     "SERVER": os.environ.get("ADFS_SERVER"),
     "CLIENT_ID": os.environ.get("ADFS_CLIENT_ID"),
+    "CLIENT_SECRET": os.environ.get("ADFS_CLIENT_SECRET"),
     "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
     "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
     "CA_BUNDLE": True,
