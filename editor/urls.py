@@ -1,7 +1,8 @@
 from django.urls import path
-from django.views.generic import RedirectView
+
+from . import views
 
 app_name = "editor"
 urlpatterns = [
-    path("", RedirectView.as_view(url="/admin/"), name="root"),
+    path("", views.root, name="root"),
 ]
