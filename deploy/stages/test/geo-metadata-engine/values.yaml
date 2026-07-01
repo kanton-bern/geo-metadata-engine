@@ -21,7 +21,7 @@ components:
       containers:
         geo-metadata-engine:
           image:
-            tag: develop-20260701153424-ac5873f
+            tag: develop-20260701174624-3a90ca4
           env:
             - name: DEBUG
               value: "True"
