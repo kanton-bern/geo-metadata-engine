@@ -171,6 +171,9 @@ AUTH_ADFS = {
     "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
     "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
     "CA_BUNDLE": True,
+    # ADFS token has no 'winaccountname' claim (django-auth-adfs's default);
+    # key the Django user on 'email', which the token does provide.
+    "USERNAME_CLAIM": "email",
     "CLAIM_MAPPING": {
         "first_name": "given_name",
         "last_name": "family_name",
