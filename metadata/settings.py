@@ -107,6 +107,9 @@ DATABASES = {
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT"),
         "TIME_ZONE": "Europe/Zurich",
+        "OPTIONS": {
+            "connect_timeout": 5,
+        },
     }
 }
 
@@ -195,10 +198,23 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
-        "console": {"class": "logging.StreamHandler"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "timestamped",
+        },
+    },
+    "formatters": {
+        "timestamped": {
+            "format": "%(asctime)s %(name)s %(message)s",
+            "datefmt": "%H:%M:%S",
+        },
     },
     "loggers": {
         "django_auth_adfs": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+        "django.db.backends": {
             "handlers": ["console"],
             "level": "DEBUG",
         },
