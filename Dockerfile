@@ -54,5 +54,5 @@ USER appuser
 EXPOSE 8000
 
 # start the application using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "metadata.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "metadata.wsgi:application"]
 
