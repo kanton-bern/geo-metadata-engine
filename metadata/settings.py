@@ -189,34 +189,3 @@ AUTH_ADFS = {
 LOGIN_URL = "django_auth_adfs:login"
 LOGIN_REDIRECT_URL = "/"
 
-# Temporary DEBUG logging for the ADFS OIDC flow. Prints the token request
-# (token endpoint, redirect_uri, and whether client_secret/code_verifier are
-# sent) to stdout, which surfaces in the pod logs. Used to diagnose the
-# MSIS9612 "authorization code is invalid" error at the token exchange step.
-# Remove once ADFS login is working.
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "timestamped",
-        },
-    },
-    "formatters": {
-        "timestamped": {
-            "format": "%(asctime)s %(name)s %(message)s",
-            "datefmt": "%H:%M:%S",
-        },
-    },
-    "loggers": {
-        "django_auth_adfs": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
-        "django.db.backends": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
-    },
-}
