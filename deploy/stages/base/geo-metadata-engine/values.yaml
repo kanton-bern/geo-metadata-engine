@@ -67,8 +67,8 @@ components:
               type: RuntimeDefault
           resources:
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 1
+              memory: 2Gi
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 1
+              memory: 2Gi
