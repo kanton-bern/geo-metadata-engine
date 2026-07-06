@@ -20,6 +20,8 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 
+from editor.views import liveness, readiness
+
 
 # Keep a reference to the unwrapped admin login view so it stays reachable as a
 # local username/password fallback for superusers (break-glass access if ADFS is
@@ -36,6 +38,8 @@ urlpatterns = [
     path("admin/local-login/", admin_local_login, name="admin-local-login"),
     path("admin/", admin.site.urls, name="admin"),
     path("oauth2/", include("django_auth_adfs.urls")),
+    path("liveness/", liveness, name="liveness"),
+    path("readiness/", readiness, name="readiness"),
 ]
 
 if settings.DEBUG:
