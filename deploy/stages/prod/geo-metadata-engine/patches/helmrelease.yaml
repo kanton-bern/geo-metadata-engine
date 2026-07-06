@@ -3,7 +3,6 @@ kind: HelmRelease
 metadata:
   name: geo-metadata-engine
 spec:
-  # Hier wird die Struktur mit dem Kustomize-Post-Renderer ergänzt:
   postRenderers:
     - kustomize:
         patches:
@@ -13,12 +12,20 @@ spec:
               name: geo-metadata-engine-geo-metadata-engine
             patch: |-
               - op: add
-                path: /spec/template/spec/containers/0/readinessProbe/httpGet/httpHeaders
+                path: /spec/template/spec/containers/0/readinessProbe
                 value:
-                  - name: Host
-                    value: geo-metadata-engine.apps.be.ch
+                  httpGet:
+                    path: /readiness/
+                    port: 8000
+                    httpHeaders:
+                      - name: Host
+                        value: geo-metadata-engine.apps.be.ch
               - op: add
-                path: /spec/template/spec/containers/0/livenessProbe/httpGet/httpHeaders
+                path: /spec/template/spec/containers/0/livenessProbe
                 value:
-                  - name: Host
-                    value: geo-metadata-engine.apps.be.ch
+                  httpGet:
+                    path: /liveness/
+                    port: 8000
+                    httpHeaders:
+                      - name: Host
+                        value: geo-metadata-engine.apps.be.ch
