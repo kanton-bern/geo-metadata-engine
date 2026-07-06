@@ -10,3 +10,5 @@ configMapGenerator:
   - values.yaml
   options:
     disableNameSuffixHash: true
+patches:
+  - path: patches/helmrelease.yaml
