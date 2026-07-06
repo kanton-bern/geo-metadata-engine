@@ -28,3 +28,21 @@ components:
               value: "127.0.0.1,localhost,geo-metadata-engine-dev.apps.be.ch"
             - name: CSRF_TRUSTED_ORIGINS
               value: "https://geo-metadata-engine-dev.apps.be.ch,http://localhost,http://127.0.0.1"
+          livenessProbe:
+            enabled: false
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+            path: "/liveness/"
+            port: 8000
+          readinessProbe:
+            enabled: false
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+            path: "/readiness/"
+            port: 8000
