@@ -34,6 +34,11 @@ CSRF_TRUSTED_ORIGINS = [
     if origin
 ]
 
+# TLS is terminated at the ingress/router, so requests reach the app over plain
+# HTTP internally. Trust the X-Forwarded-Proto header so Django builds absolute
+# URLs (e.g. the ADFS OAuth redirect_uri) with the correct https scheme.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # Application definition
 
@@ -46,7 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
-    # "django_auth_adfs",
+    "django_auth_adfs",
 ]
 
 MIDDLEWARE = [
@@ -102,6 +107,9 @@ DATABASES = {
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT"),
         "TIME_ZONE": "Europe/Zurich",
+        "OPTIONS": {
+            "connect_timeout": 5,
+        },
     }
 }
 
@@ -154,24 +162,30 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# AUTHENTICATION_BACKENDS = [
-#     "django_auth_adfs.backend.AdfsAuthCodeBackend",
-# ]
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "django_auth_adfs.backend.AdfsAuthCodeBackend",
+]
 
-# AUTH_ADFS = {
-#     "SERVER": os.environ.get("ADFS_SERVER"),
-#     "CLIENT_ID": os.environ.get("ADFS_CLIENT_ID"),
-#     "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
-#     "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
-#     "CA_BUNDLE": True,
-#    "CLAIM_MAPPING": {
-#        "first_name": "given_name",
-#        "last_name": "family_name",
-#        "email": "email",
-#    },
-#    "GROUP_CLAIM": "group",
-#    "MIRROR_GROUPS": True,
-# }
+AUTH_ADFS = {
+    "SERVER": os.environ.get("ADFS_SERVER"),
+    "CLIENT_ID": os.environ.get("ADFS_CLIENT_ID"),
+    "CLIENT_SECRET": os.environ.get("ADFS_CLIENT_SECRET"),
+    "RELYING_PARTY_ID": os.environ.get("ADFS_RELYING_PARTY_ID"),
+    "AUDIENCE": os.environ.get("ADFS_AUDIENCE"),
+    "CA_BUNDLE": True,
+    # ADFS token has no 'winaccountname' claim (django-auth-adfs's default);
+    # key the Django user on 'email', which the token does provide.
+    "USERNAME_CLAIM": "email",
+    "CLAIM_MAPPING": {
+        "first_name": "given_name",
+        "last_name": "family_name",
+        "email": "email",
+    },
+    "GROUP_CLAIM": "group",
+    "MIRROR_GROUPS": True,
+}
 
-# LOGIN_URL = "django_auth_adfs:login"
-# LOGIN_REDIRECT_URL = "/"
+LOGIN_URL = "django_auth_adfs:login"
+LOGIN_REDIRECT_URL = "/"
+

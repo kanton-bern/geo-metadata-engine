@@ -1,0 +1,96 @@
+nameOverride: geo-metadata-engine
+
+includes:
+  ingress: true
+  service: true
+  deployment: true
+  statefulset: false
+  envSecret: true
+  envConfigMap: false
+  files: false
+  configFiles: false
+  binaryFiles: false
+  pvcs: true
+  job: false
+  cronjob: false
+  servicemonitor: false
+  networkpolicy: false
+
+secrets:
+  data:
+    registry:
+      pullSecret:
+        enabled: true
+        name: harbor-registry-secret
+
+ingresses:
+  ingress:
+    deploy: true
+    ingressClassName: "kb-ka"
+    tls:
+      type: "existing"
+      existing:
+        secret: geo-metadata-engine-tls
+
+components:
+  geo-metadata-engine:
+    services:
+      http:
+        deploy: true
+        port: 8000
+        targetPort: 8000
+    controller:
+      deploy: true
+      replicas: 1
+      type: Deployment
+      strategy:
+        type: "RollingUpdate"
+        maxSurge: "1"
+        maxUnavailable: "0"
+      extraLabels:
+        "customer.gitops.bedag.ch/hlq": "act"
+        "customer.gitops.bedag.ch/stage": "${stage}"
+      containers:
+        geo-metadata-engine:
+          image:
+            repository: artifacts.bedag.cloud/ghcr/kanton-bern/geo-metadata-engine
+            tag: latest
+          containerPorts:
+            - name: http
+              containerPort: 8000
+          livenessProbe:
+            enabled: true
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+            path: "/liveness/"
+            port: 8000
+          readinessProbe:
+            enabled: true
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+            path: "/readiness/"
+            port: 8000
+          containerSecurityContext:
+            enabled: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 0.5
+              memory: 1Gi

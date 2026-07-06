@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body text-center p-4 p-md-5">
+        <h1 class="card-title h3 mb-4">Willkommen bei der Geo-Metadata-Engine</h1>
+        <div class="alert alert-warning" role="alert">
+          Sie sind als <strong>{{ user.get_username }}</strong> angemeldet, haben
+          aber noch keine Berechtigung für die BGI Metadaten-Verwaltung.
+        </div>
+        <p class="card-text text-muted mb-0">
+          Ein Administrator wird Ihre Anfrage prüfen, und Ihnen gegebenenfalls
+          die nötigen Berechtigungen zuteilen. Bis es soweit ist, bitten wir um
+          etwas Geduld. Sie hören von uns...
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

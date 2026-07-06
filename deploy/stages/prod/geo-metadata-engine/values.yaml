@@ -1,0 +1,31 @@
+ingresses:
+  ingress:
+    rules:
+      - host: geo-metadata-engine.apps.be.ch
+        http:
+          paths:
+            - backend:
+                serviceNameSuffix: geo-metadata-engine-http
+                servicePort: 8000
+              path: "/"
+        secretName: "geo-metadata-engine-tls"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      cert-manager.io/cluster-issuer: swisssign-kb
+      cert-manager.io/common-name: geo-metadata-engine.apps.be.ch
+
+components:
+  geo-metadata-engine:
+    controller:
+      containers:
+        geo-metadata-engine:
+          image:
+            tag: develop-20260702082958-e73ad4c
+          env:
+            - name: DEBUG
+              value: "False"
+            - name: ALLOWED_HOSTS
+              value: "127.0.0.1,localhost,geo-metadata-engine.apps.be.ch"
+            - name: CSRF_TRUSTED_ORIGINS
+              value: "https://geo-metadata-engine.apps.be.ch,http://localhost,http://127.0.0.1"
