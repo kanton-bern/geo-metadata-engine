@@ -1,0 +1,15 @@
+name: Cleanup Container Image Versions
+on:
+  workflow_dispatch:
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete image versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: "geo-metadata-engine"
+          package-type: "container"
+          min-versions-to-keep: 10
