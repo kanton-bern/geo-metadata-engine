@@ -12,18 +12,20 @@ spec:
               name: geo-metadata-engine-geo-metadata-engine
             patch: |-
               - op: add
-                path: /spec/template/spec/containers/0/readinessProbe/httpGet
+                path: /spec/template/spec/containers/0/readinessProbe
                 value:
-                  path: /readiness
-                  port: http
-                  httpHeaders:
-                    - name: Host
-                      value: geo-metadata-engine-dev.apps.be.ch
+                  httpGet:
+                    path: /readiness/
+                    port: 8000
+                    httpHeaders:
+                      - name: Host
+                        value: geo-metadata-engine-dev.apps.be.ch
               - op: add
-                path: /spec/template/spec/containers/0/livenessProbe/httpGet
+                path: /spec/template/spec/containers/0/livenessProbe
                 value:
-                  path: /liveness/
-                  port: http
-                  httpHeaders:
-                    - name: Host
-                      value: geo-metadata-engine-dev.apps.be.ch
+                  httpGet:
+                    path: /liveness/
+                    port: 8000
+                    httpHeaders:
+                      - name: Host
+                        value: geo-metadata-engine-dev.apps.be.ch
