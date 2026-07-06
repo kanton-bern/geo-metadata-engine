@@ -43,6 +43,10 @@ components:
       deploy: true
       replicas: 1
       type: Deployment
+      strategy:
+        type: "RollingUpdate"
+        maxSurge: 1
+        maxUnavailable: 0
       extraLabels:
         "customer.gitops.bedag.ch/hlq": "act"
         "customer.gitops.bedag.ch/stage": "${stage}"
@@ -70,5 +74,5 @@ components:
               cpu: 1
               memory: 2Gi
             requests:
-              cpu: 1
-              memory: 2Gi
+              cpu: 0.5
+              memory: 1Gi
