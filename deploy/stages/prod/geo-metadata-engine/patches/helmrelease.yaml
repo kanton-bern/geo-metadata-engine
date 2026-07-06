@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: geo-metadata-engine
+spec:
+  # Hier wird die Struktur mit dem Kustomize-Post-Renderer ergänzt:
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              version: v1
+              kind: Deployment
+              name: geo-metadata-engine-geo-metadata-engine
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/readinessProbe/httpGet/httpHeaders
+                value:
+                  - name: Host
+                    value: geo-metadata-engine.apps.be.ch
+              - op: add
+                path: /spec/template/spec/containers/0/livenessProbe/httpGet/httpHeaders
+                value:
+                  - name: Host
+                    value: geo-metadata-engine.apps.be.ch

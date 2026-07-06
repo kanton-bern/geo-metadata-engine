@@ -22,6 +22,10 @@ components:
         geo-metadata-engine:
           image:
             tag: develop-20260702082958-e73ad4c
+          livenessProbe:
+            enabled: false
+          readinessProbe:
+            enabled: false
           env:
             - name: DEBUG
               value: "False"
