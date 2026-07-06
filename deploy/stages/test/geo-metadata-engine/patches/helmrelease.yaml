@@ -14,7 +14,7 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/readinessProbe/httpGet
                 value:
-                  path: /healthz
+                  path: /readiness
                   port: http
                   httpHeaders:
                     - name: Host
@@ -22,7 +22,7 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/livenessProbe/httpGet
                 value:
-                  path: /healthz
+                  path: /liveness/
                   port: http
                   httpHeaders:
                     - name: Host
