@@ -1,9 +1,6 @@
 name: Build and Push Podman Image
 
 on:
-  # push:
-  #   branches:
-  #     - develop
   workflow_dispatch:
 
 env:
@@ -15,7 +12,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -45,3 +42,16 @@ jobs:
       - name: Push Image to GHCR
         run: |
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
+
+      - name: Update image tag in test Helm values
+        env:
+          NEW_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          yq -i '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag = strenv(NEW_TAG)' \
+            deploy/stages/test/geo-metadata-engine/values.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy/stages/test/geo-metadata-engine/values.yaml
+          git commit -m "chore: bump test image to ${NEW_TAG}"
+          git pull --rebase origin develop
+          git push origin HEAD:develop
