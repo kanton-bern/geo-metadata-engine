@@ -19,7 +19,7 @@ spec:
                     port: 8000
                     httpHeaders:
                       - name: Host
-                        value: geo-metadata-engine-dev.apps.be.ch
+                        value: geo-metadata-engine.apps.be.ch
               - op: add
                 path: /spec/template/spec/containers/0/livenessProbe
                 value:
@@ -28,4 +28,4 @@ spec:
                     port: 8000
                     httpHeaders:
                       - name: Host
-                        value: geo-metadata-engine-dev.apps.be.ch
+                        value: geo-metadata-engine.apps.be.ch
