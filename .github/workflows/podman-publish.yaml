@@ -17,8 +17,7 @@ env:
   # Der Image-Name wird komplett in Kleinbuchstaben in der GHCR erwartet
   IMAGE_NAME: ${{ github.repository }}
   # Branch, auf dem Flux die Prod-Values liest (= Basis für den Bump-PR).
-  # Sobald Flux für die Prod-Stage auf main zeigt: hier auf "main" ändern.
-  PROD_VALUES_BRANCH: develop
+  PROD_VALUES_BRANCH: main
 
 jobs:
   build-and-push:
