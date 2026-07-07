@@ -16,6 +16,9 @@ env:
   REGISTRY: ghcr.io
   # Der Image-Name wird komplett in Kleinbuchstaben in der GHCR erwartet
   IMAGE_NAME: ${{ github.repository }}
+  # Branch, auf dem Flux die Prod-Values liest (= Basis für den Bump-PR).
+  # Sobald Flux für die Prod-Stage auf main zeigt: hier auf "main" ändern.
+  PROD_VALUES_BRANCH: develop
 
 jobs:
   build-and-push:
@@ -23,6 +26,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      pull-requests: write
 
     steps:
       # Baut den per Input gewählten Branch (develop oder main)
@@ -46,16 +50,6 @@ jobs:
         run: |
           echo "tag=${{ inputs.branch }}-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
 
-      # main → prod-Stage, develop → test-Stage
-      - name: Determine deployment stage
-        id: stage
-        run: |
-          if [ "${{ inputs.branch }}" = "main" ]; then
-            echo "stage=prod" >> $GITHUB_OUTPUT
-          else
-            echo "stage=test" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build Image with Podman
         run: |
           podman build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }} .
@@ -64,23 +58,46 @@ jobs:
         run: |
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
 
-      # Der Values-Bump muss immer auf develop landen, da Flux nur develop reconciled.
-      # Beim main-Build ist oben main ausgecheckt, daher hier develop auschecken.
-      - name: Checkout develop (GitOps branch)
-        uses: actions/checkout@v6
-        with:
-          ref: develop
-
-      - name: Update image tag in Helm values
+      # develop → Test-Tag direkt auf develop pushen (Flux deployt in die Testumgebung)
+      - name: Update test image tag on develop
+        if: inputs.branch == 'develop'
         env:
           NEW_TAG: ${{ steps.meta.outputs.tag }}
-          STAGE: ${{ steps.stage.outputs.stage }}
         run: |
           yq -i '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag = strenv(NEW_TAG)' \
-            deploy/stages/${STAGE}/geo-metadata-engine/values.yaml
+            deploy/stages/test/geo-metadata-engine/values.yaml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy/stages/${STAGE}/geo-metadata-engine/values.yaml
-          git commit -m "chore: bump ${STAGE} image to ${NEW_TAG}"
+          git add deploy/stages/test/geo-metadata-engine/values.yaml
+          git commit -m "chore: bump test image to ${NEW_TAG}"
           git pull --rebase origin develop
           git push origin HEAD:develop
+
+      # main → Prod-Bump als PR gegen PROD_VALUES_BRANCH.
+      # Der PR-Merge ist die bewusste Freigabe für den Prod-Deploy.
+      - name: Checkout prod values branch
+        if: inputs.branch == 'main'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.PROD_VALUES_BRANCH }}
+
+      - name: Create pull request with prod image bump
+        if: inputs.branch == 'main'
+        env:
+          NEW_TAG: ${{ steps.meta.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUMP_BRANCH="chore/bump-prod-image-${NEW_TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BUMP_BRANCH}"
+          yq -i '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag = strenv(NEW_TAG)' \
+            deploy/stages/prod/geo-metadata-engine/values.yaml
+          git add deploy/stages/prod/geo-metadata-engine/values.yaml
+          git commit -m "chore: bump prod image to ${NEW_TAG}"
+          git push origin "${BUMP_BRANCH}"
+          gh pr create \
+            --base "${PROD_VALUES_BRANCH}" \
+            --head "${BUMP_BRANCH}" \
+            --title "chore: bump prod image to ${NEW_TAG}" \
+            --body "Automated production image bump to \`${NEW_TAG}\` (built from \`main\`). Merging this PR deploys the image to production via Flux."
