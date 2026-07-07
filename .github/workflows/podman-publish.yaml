@@ -2,6 +2,15 @@ name: Build and Push Podman Image
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch: develop → Testumgebung, main → Produktion'
+        required: true
+        type: choice
+        options:
+          - develop
+          - main
+        default: develop
 
 env:
   REGISTRY: ghcr.io
@@ -16,10 +25,11 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
+      # Baut den per Input gewählten Branch (develop oder main)
+      - name: Checkout repository (build branch)
         uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ inputs.branch }}
 
       - name: Log in to GHCR
         run: |
@@ -30,10 +40,21 @@ jobs:
         run: |
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      # Tag-Präfix = gewählter Branch, z. B. main-20260707120000-abc1234
       - name: Create Tag
         id: meta
         run: |
-          echo "tag=develop-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
+          echo "tag=${{ inputs.branch }}-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
+
+      # main → prod-Stage, develop → test-Stage
+      - name: Determine deployment stage
+        id: stage
+        run: |
+          if [ "${{ inputs.branch }}" = "main" ]; then
+            echo "stage=prod" >> $GITHUB_OUTPUT
+          else
+            echo "stage=test" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build Image with Podman
         run: |
@@ -43,15 +64,23 @@ jobs:
         run: |
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
 
-      - name: Update image tag in test Helm values
+      # Der Values-Bump muss immer auf develop landen, da Flux nur develop reconciled.
+      # Beim main-Build ist oben main ausgecheckt, daher hier develop auschecken.
+      - name: Checkout develop (GitOps branch)
+        uses: actions/checkout@v6
+        with:
+          ref: develop
+
+      - name: Update image tag in Helm values
         env:
           NEW_TAG: ${{ steps.meta.outputs.tag }}
+          STAGE: ${{ steps.stage.outputs.stage }}
         run: |
           yq -i '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag = strenv(NEW_TAG)' \
-            deploy/stages/test/geo-metadata-engine/values.yaml
+            deploy/stages/${STAGE}/geo-metadata-engine/values.yaml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy/stages/test/geo-metadata-engine/values.yaml
-          git commit -m "chore: bump test image to ${NEW_TAG}"
+          git add deploy/stages/${STAGE}/geo-metadata-engine/values.yaml
+          git commit -m "chore: bump ${STAGE} image to ${NEW_TAG}"
           git pull --rebase origin develop
           git push origin HEAD:develop
