@@ -1,0 +1,21 @@
+name: Delete merged bump branch
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-branch:
+    # Nur nach echtem Merge (nicht bei verworfenen PRs) und nur für Bump-Branches des Bots
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'chore/bump-prod-image-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Delete head branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${HEAD_REF}"
