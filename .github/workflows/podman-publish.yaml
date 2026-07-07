@@ -26,7 +26,6 @@ jobs:
     permissions:
       contents: write
       packages: write
-      pull-requests: write
 
     steps:
       # Baut den per Input gewählten Branch (develop oder main)
@@ -73,7 +72,8 @@ jobs:
           git pull --rebase origin develop
           git push origin HEAD:develop
 
-      # main → Prod-Bump als PR gegen PROD_VALUES_BRANCH.
+      # main → Prod-Bump als Branch pushen; der PR wird manuell eröffnet
+      # (GitHub Actions darf in dieser Organisation keine PRs erstellen).
       # Der PR-Merge ist die bewusste Freigabe für den Prod-Deploy.
       - name: Checkout prod values branch
         if: inputs.branch == 'main'
@@ -81,11 +81,10 @@ jobs:
         with:
           ref: ${{ env.PROD_VALUES_BRANCH }}
 
-      - name: Create pull request with prod image bump
+      - name: Push branch with prod image bump
         if: inputs.branch == 'main'
         env:
           NEW_TAG: ${{ steps.meta.outputs.tag }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BUMP_BRANCH="chore/bump-prod-image-${NEW_TAG}"
           git config user.name "github-actions[bot]"
@@ -96,8 +95,12 @@ jobs:
           git add deploy/stages/prod/geo-metadata-engine/values.yaml
           git commit -m "chore: bump prod image to ${NEW_TAG}"
           git push origin "${BUMP_BRANCH}"
-          gh pr create \
-            --base "${PROD_VALUES_BRANCH}" \
-            --head "${BUMP_BRANCH}" \
-            --title "chore: bump prod image to ${NEW_TAG}" \
-            --body "Automated production image bump to \`${NEW_TAG}\` (built from \`main\`). Merging this PR deploys the image to production via Flux."
+          PR_URL="${{ github.server_url }}/${{ github.repository }}/compare/${PROD_VALUES_BRANCH}...${BUMP_BRANCH}?expand=1"
+          echo "Create the production deployment PR here: ${PR_URL}"
+          {
+            echo "## Prod-Deploy vorbereitet"
+            echo ""
+            echo "Image \`${NEW_TAG}\` wurde gebaut und der Bump-Branch \`${BUMP_BRANCH}\` gepusht."
+            echo ""
+            echo "**[→ PR erstellen](${PR_URL})** — der Merge löst den Prod-Deploy via Flux aus."
+          } >> "$GITHUB_STEP_SUMMARY"
