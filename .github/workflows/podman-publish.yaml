@@ -2,11 +2,22 @@ name: Build and Push Podman Image
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch: develop → Testumgebung, main → Produktion'
+        required: true
+        type: choice
+        options:
+          - develop
+          - main
+        default: develop
 
 env:
   REGISTRY: ghcr.io
   # Der Image-Name wird komplett in Kleinbuchstaben in der GHCR erwartet
   IMAGE_NAME: ${{ github.repository }}
+  # Branch, auf dem Flux die Prod-Values liest (= Basis für den Bump-PR).
+  PROD_VALUES_BRANCH: main
 
 jobs:
   build-and-push:
@@ -16,10 +27,11 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
+      # Baut den per Input gewählten Branch (develop oder main)
+      - name: Checkout repository (build branch)
         uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ inputs.branch }}
 
       - name: Log in to GHCR
         run: |
@@ -30,10 +42,11 @@ jobs:
         run: |
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      # Tag-Präfix = gewählter Branch, z. B. main-20260707120000-abc1234
       - name: Create Tag
         id: meta
         run: |
-          echo "tag=develop-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
+          echo "tag=${{ inputs.branch }}-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
 
       - name: Build Image with Podman
         run: |
@@ -43,7 +56,9 @@ jobs:
         run: |
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
 
-      - name: Update image tag in test Helm values
+      # develop → Test-Tag direkt auf develop pushen (Flux deployt in die Testumgebung)
+      - name: Update test image tag on develop
+        if: inputs.branch == 'develop'
         env:
           NEW_TAG: ${{ steps.meta.outputs.tag }}
         run: |
@@ -55,3 +70,36 @@ jobs:
           git commit -m "chore: bump test image to ${NEW_TAG}"
           git pull --rebase origin develop
           git push origin HEAD:develop
+
+      # main → Prod-Bump als Branch pushen; der PR wird manuell eröffnet
+      # (GitHub Actions darf in dieser Organisation keine PRs erstellen).
+      # Der PR-Merge ist die bewusste Freigabe für den Prod-Deploy.
+      - name: Checkout prod values branch
+        if: inputs.branch == 'main'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.PROD_VALUES_BRANCH }}
+
+      - name: Push branch with prod image bump
+        if: inputs.branch == 'main'
+        env:
+          NEW_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          BUMP_BRANCH="chore/bump-prod-image-${NEW_TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BUMP_BRANCH}"
+          yq -i '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag = strenv(NEW_TAG)' \
+            deploy/stages/prod/geo-metadata-engine/values.yaml
+          git add deploy/stages/prod/geo-metadata-engine/values.yaml
+          git commit -m "chore: bump prod image to ${NEW_TAG}"
+          git push origin "${BUMP_BRANCH}"
+          PR_URL="${{ github.server_url }}/${{ github.repository }}/compare/${PROD_VALUES_BRANCH}...${BUMP_BRANCH}?expand=1"
+          echo "Create the production deployment PR here: ${PR_URL}"
+          {
+            echo "## Prod-Deploy vorbereitet"
+            echo ""
+            echo "Image \`${NEW_TAG}\` wurde gebaut und der Bump-Branch \`${BUMP_BRANCH}\` gepusht."
+            echo ""
+            echo "**[→ PR erstellen](${PR_URL})** — der Merge löst den Prod-Deploy via Flux aus."
+          } >> "$GITHUB_STEP_SUMMARY"
