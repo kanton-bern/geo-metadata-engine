@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Nur anzeigen, was gelöscht würde (nichts löschen)'
+        description: 'dry-run: only show what would be deleted (deletes nothing)'
         required: false
         type: boolean
         default: true
@@ -86,11 +86,11 @@ jobs:
             ($del[0] | map(.id)) as $delIds
             | map(select(.id as $i | $delIds | index($i) | not))
             | map({tags: tags, reason: (
-                if   (tags | index($testTag)) then "geschützt: aktiv in Test-Umgebung"
-                elif (tags | index($prodTag)) then "geschützt: aktiv in Prod-Umgebung"
-                elif (tags | any(startswith("develop-"))) then "Top-15 develop-Builds"
-                elif (tags | any(startswith("main-")))    then "Top-15 main-Builds"
-                else "nicht klassifiziert (wird nie gelöscht)" end)})
+                if   (tags | index($testTag)) then "protected: active in test environment"
+                elif (tags | index($prodTag)) then "protected: active in prod environment"
+                elif (tags | any(startswith("develop-"))) then "top 15 develop builds"
+                elif (tags | any(startswith("main-")))    then "top 15 main builds"
+                else "unclassified (never deleted)" end)})
           ' versions.json > keep.json
           KEEP_TOTAL=$(jq 'length' keep.json)
 
@@ -106,17 +106,17 @@ jobs:
                 fi
               done
 
-          if [ "${DRY_RUN}" = "true" ]; then ACTION="Würde gelöscht"; else ACTION="Gelöscht"; fi
+          if [ "${DRY_RUN}" = "true" ]; then ACTION="Would delete"; else ACTION="Deleted"; fi
           {
             echo "## Container Image Cleanup"
             echo ""
-            [ "${DRY_RUN}" = "true" ] && echo "**🔍 DRY RUN — es wurde nichts gelöscht**" && echo ""
-            echo "- Aktive Tags: \`${TEST_ENV_TAG}\` (Test-Umgebung), \`${PROD_ENV_TAG}\` (Prod-Umgebung)"
-            echo "- Versionen gesamt: **${TOTAL}** · behalten: **${KEEP_TOTAL}** · ${ACTION}: **${DELETE_COUNT}**"
+            [ "${DRY_RUN}" = "true" ] && echo "**🔍 DRY RUN — nothing was deleted**" && echo ""
+            echo "- Active tags: \`${TEST_ENV_TAG}\` (test environment), \`${PROD_ENV_TAG}\` (prod environment)"
+            echo "- Total versions: **${TOTAL}** · kept: **${KEEP_TOTAL}** · ${ACTION,,}: **${DELETE_COUNT}**"
             echo ""
-            echo "### Behalten (${KEEP_TOTAL})"
+            echo "### Kept (${KEEP_TOTAL})"
             echo ""
-            echo "| Tags | Grund |"
+            echo "| Tags | Reason |"
             echo "|---|---|"
             jq -r '.[] | "| \(.tags | join(", ") | if . == "" then "_untagged_" else . end) | \(.reason) |"' keep.json
             echo ""
