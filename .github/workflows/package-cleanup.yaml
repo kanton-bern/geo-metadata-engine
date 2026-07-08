@@ -1,4 +1,6 @@
 name: Cleanup Container Image Versions
+# Show in the run list whether this run only previews or actually deletes
+run-name: "Cleanup Container Image Versions (${{ inputs.dry_run && 'dry-run' || 'delete' }})"
 
 on:
   workflow_dispatch:
