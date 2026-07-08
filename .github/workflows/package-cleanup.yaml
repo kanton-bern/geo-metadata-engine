@@ -1,0 +1,128 @@
+name: Cleanup Container Image Versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Nur anzeigen, was gelöscht würde (nichts löschen)'
+        required: false
+        type: boolean
+        default: true
+  schedule:
+    - cron: '0 4 1 * *'   # monthly, 1st day of month, 04:00 UTC
+
+env:
+  ORG: kanton-bern
+  PACKAGE: geo-metadata-engine
+  KEEP_PER_BRANCH: 15
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # Read the tags currently deployed per environment (no checkout needed):
+      # test environment -> test values on develop (a develop-* image)
+      # prod environment -> prod values on main (a main-* image)
+      - name: Determine actively deployed image tags
+        id: active
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TEST_ENV_TAG=$(gh api -H "Accept: application/vnd.github.raw" \
+            "/repos/${{ github.repository }}/contents/deploy/stages/test/geo-metadata-engine/values.yaml?ref=develop" \
+            | yq '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag')
+          PROD_ENV_TAG=$(gh api -H "Accept: application/vnd.github.raw" \
+            "/repos/${{ github.repository }}/contents/deploy/stages/prod/geo-metadata-engine/values.yaml?ref=main" \
+            | yq '.components.geo-metadata-engine.controller.containers.geo-metadata-engine.image.tag')
+          # Fail-safe: if either active tag cannot be determined, delete NOTHING
+          for TAG in "${TEST_ENV_TAG}" "${PROD_ENV_TAG}"; do
+            if [ -z "${TAG}" ] || [ "${TAG}" = "null" ]; then
+              echo "::error::Active image tag could not be determined - aborting cleanup"
+              exit 1
+            fi
+          done
+          echo "Active tags: ${TEST_ENV_TAG} (test env), ${PROD_ENV_TAG} (prod env)"
+          echo "test_env_tag=${TEST_ENV_TAG}" >> $GITHUB_OUTPUT
+          echo "prod_env_tag=${PROD_ENV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Delete old image versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TEST_ENV_TAG: ${{ steps.active.outputs.test_env_tag }}
+          PROD_ENV_TAG: ${{ steps.active.outputs.prod_env_tag }}
+          DRY_RUN: ${{ inputs.dry_run }}   # empty on scheduled runs -> deletes for real
+        run: |
+          set -euo pipefail
+          # List all package versions, newest first
+          gh api --paginate "/orgs/${ORG}/packages/container/${PACKAGE}/versions?per_page=100" \
+            | jq -s 'add | sort_by(.created_at) | reverse' > versions.json
+
+          TOTAL=$(jq 'length' versions.json)
+
+          # Delete candidates: per branch prefix (develop-* / main-*) everything beyond
+          # the KEEP_PER_BRANCH newest, except versions carrying an actively deployed tag.
+          # Versions tagged with neither prefix (legacy/untagged) are never touched.
+          jq --arg testTag "${TEST_ENV_TAG}" --arg prodTag "${PROD_ENV_TAG}" \
+             --argjson keep "${KEEP_PER_BRANCH}" '
+            def tags: (.metadata.container.tags // []);
+            . as $all
+            | ( ($all | map(select(tags | any(startswith("develop-")))) | .[$keep:])
+              + ($all | map(select(tags | any(startswith("main-"))))    | .[$keep:]) )
+            | unique_by(.id)
+            | map(select(tags | (index($testTag) or index($prodTag)) | not))
+          ' versions.json > delete.json
+
+          DELETE_COUNT=$(jq 'length' delete.json)
+
+          # Keep overview with a reason per version (for the job summary)
+          jq --slurpfile del delete.json \
+             --arg testTag "${TEST_ENV_TAG}" --arg prodTag "${PROD_ENV_TAG}" '
+            def tags: (.metadata.container.tags // []);
+            ($del[0] | map(.id)) as $delIds
+            | map(select(.id as $i | $delIds | index($i) | not))
+            | map({tags: tags, reason: (
+                if   (tags | index($testTag)) then "geschützt: aktiv in Test-Umgebung"
+                elif (tags | index($prodTag)) then "geschützt: aktiv in Prod-Umgebung"
+                elif (tags | any(startswith("develop-"))) then "Top-15 develop-Builds"
+                elif (tags | any(startswith("main-")))    then "Top-15 main-Builds"
+                else "nicht klassifiziert (wird nie gelöscht)" end)})
+          ' versions.json > keep.json
+          KEEP_TOTAL=$(jq 'length' keep.json)
+
+          echo "Total: ${TOTAL}, keep: ${KEEP_TOTAL}, delete: ${DELETE_COUNT}"
+
+          jq -r '.[] | "\(.id)\t\((.metadata.container.tags // []) | join(","))"' delete.json \
+            | while IFS=$'\t' read -r VERSION_ID TAGS; do
+                if [ "${DRY_RUN}" = "true" ]; then
+                  echo "[dry-run] would delete version ${VERSION_ID} (tags: ${TAGS:-<untagged>})"
+                else
+                  echo "Deleting version ${VERSION_ID} (tags: ${TAGS:-<untagged>})"
+                  gh api -X DELETE "/orgs/${ORG}/packages/container/${PACKAGE}/versions/${VERSION_ID}"
+                fi
+              done
+
+          if [ "${DRY_RUN}" = "true" ]; then ACTION="Würde gelöscht"; else ACTION="Gelöscht"; fi
+          {
+            echo "## Container Image Cleanup"
+            echo ""
+            [ "${DRY_RUN}" = "true" ] && echo "**🔍 DRY RUN — es wurde nichts gelöscht**" && echo ""
+            echo "- Aktive Tags: \`${TEST_ENV_TAG}\` (Test-Umgebung), \`${PROD_ENV_TAG}\` (Prod-Umgebung)"
+            echo "- Versionen gesamt: **${TOTAL}** · behalten: **${KEEP_TOTAL}** · ${ACTION}: **${DELETE_COUNT}**"
+            echo ""
+            echo "### Behalten (${KEEP_TOTAL})"
+            echo ""
+            echo "| Tags | Grund |"
+            echo "|---|---|"
+            jq -r '.[] | "| \(.tags | join(", ") | if . == "" then "_untagged_" else . end) | \(.reason) |"' keep.json
+            echo ""
+            echo "### ${ACTION} (${DELETE_COUNT})"
+            echo ""
+            echo "| Version-ID | Tags |"
+            echo "|---|---|"
+            jq -r '.[] | "| \(.id) | \((.metadata.container.tags // []) | join(", ")) |"' delete.json
+          } >> "$GITHUB_STEP_SUMMARY"
