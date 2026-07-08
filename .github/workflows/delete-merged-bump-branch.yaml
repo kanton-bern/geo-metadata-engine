@@ -6,7 +6,7 @@ on:
 
 jobs:
   delete-branch:
-    # Nur nach echtem Merge (nicht bei verworfenen PRs) und nur für Bump-Branches des Bots
+    # Only after a real merge (not for closed-unmerged PRs) and only for the bot's bump branches
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'chore/bump-prod-image-')
     runs-on: ubuntu-latest
     permissions:
@@ -17,5 +17,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${HEAD_REF}"
+          {
+            echo "## Bump branch cleanup"
+            echo ""
+            echo "Deleted branch \`${HEAD_REF}\` after pull request #${PR_NUMBER} was merged."
+          } >> "$GITHUB_STEP_SUMMARY"
