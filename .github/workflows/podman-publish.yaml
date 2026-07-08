@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch: develop → Testumgebung, main → Produktion'
+        description: 'Branch: develop → test environment, main → production'
         required: true
         type: choice
         options:
@@ -14,9 +14,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # Der Image-Name wird komplett in Kleinbuchstaben in der GHCR erwartet
+  # GHCR requires the image name to be all lowercase
   IMAGE_NAME: ${{ github.repository }}
-  # Branch, auf dem Flux die Prod-Values liest (= Basis für den Bump-PR).
+  # Branch on which Flux reads the prod values (= base for the bump PR)
   PROD_VALUES_BRANCH: main
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       packages: write
 
     steps:
-      # Baut den per Input gewählten Branch (develop oder main)
+      # Build the branch selected via input (develop or main)
       - name: Checkout repository (build branch)
         uses: actions/checkout@v6
         with:
@@ -42,7 +42,7 @@ jobs:
         run: |
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      # Tag-Präfix = gewählter Branch, z. B. main-20260707120000-abc1234
+      # Tag prefix = selected branch, e.g. main-20260707120000-abc1234
       - name: Create Tag
         id: meta
         run: |
@@ -56,7 +56,7 @@ jobs:
         run: |
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
 
-      # develop → Test-Tag direkt auf develop pushen (Flux deployt in die Testumgebung)
+      # develop → push the test tag directly to develop (Flux deploys to the test environment)
       - name: Update test image tag on develop
         if: inputs.branch == 'develop'
         env:
@@ -70,10 +70,17 @@ jobs:
           git commit -m "chore: bump test image to ${NEW_TAG}"
           git pull --rebase origin develop
           git push origin HEAD:develop
+          {
+            echo "## Test deployment prepared"
+            echo ""
+            echo "Image \`${NEW_TAG}\` was built from \`develop\`, pushed to GHCR and written to the test values on \`develop\`."
+            echo ""
+            echo "Flux will deploy it to the test environment within ~5 minutes."
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      # main → Prod-Bump als Branch pushen; der PR wird manuell eröffnet
-      # (GitHub Actions darf in dieser Organisation keine PRs erstellen).
-      # Der PR-Merge ist die bewusste Freigabe für den Prod-Deploy.
+      # main → push the prod bump as a branch; the PR is opened manually
+      # (GitHub Actions is not allowed to create PRs in this organization).
+      # Merging the PR is the deliberate approval for the prod deployment.
       - name: Checkout prod values branch
         if: inputs.branch == 'main'
         uses: actions/checkout@v6
@@ -97,9 +104,9 @@ jobs:
           PR_URL="${{ github.server_url }}/${{ github.repository }}/compare/${PROD_VALUES_BRANCH}...${BUMP_BRANCH}?expand=1"
           echo "Create the production deployment PR here: ${PR_URL}"
           {
-            echo "## Prod-Deploy vorbereitet"
+            echo "## Prod deployment prepared"
             echo ""
-            echo "Image \`${NEW_TAG}\` wurde gebaut und der Bump-Branch \`${BUMP_BRANCH}\` gepusht."
+            echo "Image \`${NEW_TAG}\` was built from \`main\` and the bump branch \`${BUMP_BRANCH}\` was pushed."
             echo ""
-            echo "**[→ PR erstellen](${PR_URL})** — der Merge löst den Prod-Deploy via Flux aus."
+            echo "**[→ Create pull request](${PR_URL})** — merging it deploys the image to production via Flux."
           } >> "$GITHUB_STEP_SUMMARY"
