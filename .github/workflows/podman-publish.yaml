@@ -1,4 +1,5 @@
 name: Build and Push Podman Image
+run-name: "Build and Push Podman Image (${{ github.event_name == 'workflow_dispatch' && 'manual' || 'auto' }} · ${{ (inputs.branch || github.ref_name) == 'main' && 'prod environment' || 'test environment' }})"
 
 on:
   workflow_dispatch:
@@ -11,6 +12,21 @@ on:
           - develop
           - main
         default: develop
+  push:
+    branches:
+      - develop
+      - main
+    paths-ignore:
+      # The workflow's own values commits and merged prod bump PRs must not re-trigger a build
+      - 'deploy/**'
+      # Docs-only changes don't need an image
+      - 'docs/**'
+      - '**.md'
+
+# Serialize builds per branch; a queued run always builds the branch tip anyway
+concurrency:
+  group: podman-publish-${{ inputs.branch || github.ref_name }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -18,6 +34,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   # Branch on which Flux reads the prod values (= base for the bump PR)
   PROD_VALUES_BRANCH: main
+  # Branch to build: manual dispatch input, or the pushed branch on push events
+  BUILD_BRANCH: ${{ inputs.branch || github.ref_name }}
 
 jobs:
   build-and-push:
@@ -27,11 +45,11 @@ jobs:
       packages: write
 
     steps:
-      # Build the branch selected via input (develop or main)
+      # Build the selected branch (manual input) or the pushed branch (develop or main)
       - name: Checkout repository (build branch)
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ env.BUILD_BRANCH }}
 
       - name: Log in to GHCR
         run: |
@@ -42,11 +60,11 @@ jobs:
         run: |
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      # Tag prefix = selected branch, e.g. main-20260707120000-abc1234
+      # Tag prefix = build branch, e.g. main-20260707120000-abc1234
       - name: Create Tag
         id: meta
         run: |
-          echo "tag=${{ inputs.branch }}-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
+          echo "tag=${BUILD_BRANCH}-$(date +'%Y%m%d%H%M%S')-${{ steps.sha.outputs.sha_short }}" >> $GITHUB_OUTPUT
 
       - name: Build Image with Podman
         run: |
@@ -58,7 +76,7 @@ jobs:
 
       # develop → push the test tag directly to develop (Flux deploys to the test environment)
       - name: Update test image tag on develop
-        if: inputs.branch == 'develop'
+        if: env.BUILD_BRANCH == 'develop'
         env:
           NEW_TAG: ${{ steps.meta.outputs.tag }}
         run: |
@@ -82,13 +100,13 @@ jobs:
       # (GitHub Actions is not allowed to create PRs in this organization).
       # Merging the PR is the deliberate approval for the prod deployment.
       - name: Checkout prod values branch
-        if: inputs.branch == 'main'
+        if: env.BUILD_BRANCH == 'main'
         uses: actions/checkout@v6
         with:
           ref: ${{ env.PROD_VALUES_BRANCH }}
 
       - name: Push branch with prod image bump
-        if: inputs.branch == 'main'
+        if: env.BUILD_BRANCH == 'main'
         env:
           NEW_TAG: ${{ steps.meta.outputs.tag }}
         run: |
