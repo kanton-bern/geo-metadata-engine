@@ -20,7 +20,7 @@ components:
       containers:
         geo-metadata-engine:
           image:
-            tag: main-20260708051557-dfc341e
+            tag: main-20260817163315-f3d5964
           livenessProbe:
             enabled: false
           readinessProbe:
