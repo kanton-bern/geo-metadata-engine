@@ -1,24 +1,24 @@
-# Projekt act
+# Deployment configuration (GitOps via Flux)
 
-# GitFlow
+This folder contains everything **Flux** needs to deploy the application to Bedag's Kubernetes platform. No pipeline talks to the cluster directly: GitHub Actions only updates the image tag in the stage values files, Flux watches this repo and applies the change.
 
-Es werden nur Commits auf dem `develop` Branch für die Reconcilation in betracht gezogen. Änderungen werden über feature branches entwickelt und via Merge Request in den `develop` Branch übertragen.
+| Environment | Values file | Read by Flux from branch |
+|---|---|---|
+| **test** | `stages/test/geo-metadata-engine/values.yaml` | `develop` |
+| **prod** | `stages/prod/geo-metadata-engine/values.yaml` | `main` |
 
-```mermaid
-%%{init: { 'logLevel': 'debug', 'theme': 'dark' } }%%
-    gitGraph
-       commit
-       commit
-       branch feat_1
-       checkout feat_1
-       commit
-       commit
-       checkout develop
-       merge feat_1
-       commit
-       branch feat_2
-       checkout feat_2
-       commit
-       checkout develop
-       merge feat_2
+## Layout
+
 ```
+stages/
+├── base/    # shared config: HelmRelease (Bedag "common" chart) + shared values
+├── test/    # test overrides: hostname, image tag, env vars, patches, secrets
+└── prod/    # prod overrides: same layout as test
+```
+
+Secrets (`secrets/secret-values.yaml` per stage) are SOPS-encrypted with the public key `.sops.pub.asc`. Never commit plain-text secrets — this repo is public.
+
+## Full documentation
+
+- [Deployment](https://github.com/kanton-bern/geo-metadata-engine/wiki/Deployment) — how Flux, the values layering and the secrets work
+- [GitHub Actions Workflows](https://github.com/kanton-bern/geo-metadata-engine/wiki/GitHub-Actions-Workflows) — how images are built and how a deployment is triggered
