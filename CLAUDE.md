@@ -14,7 +14,7 @@ conda activate bgi_metadata
 pip install -r requirements.txt
 ```
 
-Configure a `.env` file (see `.env` for reference — required variables: `SECRET_KEY`, `DEBUG`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_PORT`). Optional (sensible defaults for local dev): `ALLOWED_HOSTS` (defaults to `127.0.0.1,localhost`) and `CSRF_TRUSTED_ORIGINS` (empty). The `ADFS_*` variables are only needed once ADFS authentication is activated (see `docs/adfs-oidc-setup.md`).
+Configure a `.env` file (see `.env` for reference — required variables: `SECRET_KEY`, `DEBUG`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_PORT`). Optional (sensible defaults for local dev): `ALLOWED_HOSTS` (defaults to `127.0.0.1,localhost`) and `CSRF_TRUSTED_ORIGINS` (empty). The `ADFS_*` variables are not needed for local development — log in with a superuser at `/admin/local-login/` instead (see the [Authentication wiki page](https://github.com/kanton-bern/geo-metadata-engine/wiki/Authentication)).
 
 ```bash
 python manage.py migrate
@@ -27,8 +27,8 @@ python manage.py runserver   # http://localhost:8000/
 ```bash
 python manage.py migrate                      # Apply database migrations
 python manage.py makemigrations               # Create new migration files
-python manage.py test                         # Run tests (editor/tests.py)
-python manage.py test editor.tests.TestName   # Run a single test
+python manage.py test                         # Run tests (editor/tests/)
+python manage.py test editor.tests.test_portal_user.PortalUserModelTest   # Run a single test case
 python manage.py shell                        # Django interactive shell
 docker build -t bgi_metadata .                # Build Docker image
 ```
@@ -75,8 +75,11 @@ Key design decision: Attribute belong to Geopäckli (not Ebene), so they survive
 
 ### Deployment
 
-CD pipeline via GitLab CI:
-- Push to `dev` → deploys to `bgi-metadata-dev` Kubernetes namespace
-- Push to `main` → deploys to `bgi-metadata-prod` Kubernetes namespace
+GitOps via GitHub Actions and Flux (full docs in the [GitHub wiki](https://github.com/kanton-bern/geo-metadata-engine/wiki)):
+- Push to `develop` → workflow builds the image and updates the test values on `develop` → Flux deploys to the **test** environment automatically
+- Push to `main` → workflow builds the image and pushes a `chore/bump-prod-image-*` branch → merging its PR into `main` (requires a second person's review) deploys to **prod**
+- The image tag in `deploy/stages/<test|prod>/geo-metadata-engine/values.yaml` decides which version runs; only GitHub Actions should change it
+
+This repo and its wiki are **public**: never add internal details (network zones, VPN/access paths, AD group names) or plain-text secrets here — internal docs live in the private `geo-metadata-engine-internal-docs` repo.
 
 Dockerfile uses a multi-stage Python 3.14-slim build; static files served by WhiteNoise.
