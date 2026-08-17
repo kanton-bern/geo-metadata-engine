@@ -11,7 +11,6 @@
 *.sqlite3-journal
 
 # Data dumps / user uploads
-editor_backup.json
 media/
 
 # Collected static files (regenerated at build time via collectstatic)
