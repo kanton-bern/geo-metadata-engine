@@ -10,5 +10,3 @@ labels:
 resources:
   - ../base
   - geo-metadata-engine
-patches:
-  - path: patches/helmrelease.yaml
