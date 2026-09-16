@@ -3,6 +3,7 @@
 {{ block.super }}
 <div class="site-footer">
   <style>
+    /* Uses the Django admin's own CSS variables, so dark mode works automatically. */
     .site-footer {
       text-align: center; font-size: 0.8em; color: var(--body-quiet-color, #999);
       padding: 8px 0; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -16,7 +17,6 @@
       color: var(--body-quiet-color, #999); font: inherit;
       display: inline-flex; align-items: center; gap: 5px;
     }
-    .build-info-short { font-family: var(--font-family-monospace, monospace); }
     .build-info-trigger:hover,
     .build-info-trigger[aria-expanded="true"] { color: var(--link-fg, #417690); }
     .build-info-trigger:focus-visible,
@@ -25,7 +25,7 @@
 
     .build-info-card {
       display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
-      z-index: 20; min-width: 340px; max-width: 90vw;
+      z-index: 20; width: max-content; min-width: 340px; max-width: min(90vw, 680px);
       background: var(--body-bg, #fff); color: var(--body-fg, #333);
       border: 1px solid var(--border-color, #ccc); border-radius: 8px;
       box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
@@ -49,7 +49,7 @@
     .build-info-k { color: var(--body-quiet-color, #999); font-size: 12px; }
     .build-info-v {
       font-family: var(--font-family-monospace, monospace); font-size: 12.5px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      overflow-wrap: anywhere;
     }
 
     .build-info-copy {
@@ -95,7 +95,7 @@
 
   <div class="build-info" id="build-info">
     <button class="build-info-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="build-info-card">
-      Build info{% if app_version_short %} <span class="build-info-short">{{ app_version_short }}</span>{% endif %}
+      Build info
     </button>
 
     <div class="build-info-card" id="build-info-card" role="dialog" aria-label="Build info">
@@ -124,6 +124,11 @@
         <span class="build-info-k">Version</span>
         <span class="build-info-v" title="{{ app_version }}" data-label="Version" data-copy="{{ app_version }}">{{ app_version }}</span>
         <button class="build-info-copy" type="button" title="Copy version"></button>
+        {% endif %}
+        {% if app_version_short %}
+        <span class="build-info-k">Commit</span>
+        <span class="build-info-v" title="{{ app_version_short }}" data-label="Commit" data-copy="{{ app_version_short }}">{{ app_version_short }}</span>
+        <button class="build-info-copy" type="button" title="Copy commit"></button>
         {% endif %}
         {% if image_name %}
         <span class="build-info-k">Image</span>
