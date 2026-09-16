@@ -24,6 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # stage 2: production stage
 FROM python:3.14-slim
+# Image version, passed in by the CI workflow
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
 
 RUN useradd -m -r -u 10001 appuser && \
     mkdir /app && \

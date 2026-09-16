@@ -68,7 +68,9 @@ jobs:
 
       - name: Build Image with Podman
         run: |
-          podman build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }} .
+          podman build \
+          --build-arg APP_VERSION=${{ steps.meta.outputs.tag }} \
+          -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }} .
 
       - name: Push Image to GHCR
         run: |
