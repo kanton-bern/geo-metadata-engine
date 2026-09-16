@@ -33,6 +33,13 @@ components:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # Stage name shown in the admin footer
+            - name: APP_ENVIRONMENT
+              value: "test"
           livenessProbe:
             enabled: false
             initialDelaySeconds: 10
