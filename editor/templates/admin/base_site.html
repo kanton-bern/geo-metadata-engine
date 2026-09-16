@@ -1,33 +1,206 @@
 {% extends "admin/base_site.html" %}
 {% block footer %}
 {{ block.super }}
-<div style="text-align: center; font-size: 0.8em; color: #999; padding: 8px 0">
-  <a href="https://github.com/kanton-bern/geo-metadata-engine/blob/main/THIRD-PARTY-LICENSES.md" target="_blank" rel="noopener" style="color: #999">Third-Party Licenses</a>
-  {% if user.is_authenticated %}
-  <span style="margin: 0 8px">·</span>
-  <span class="build-info" style="cursor: pointer" title="Click to copy">
-    <span class="build-info-label">Build info</span>
-    <span class="build-info-details">{{ app_version }} · {{ pod_name }}</span>
-    <span class="build-info-copied">Copied!</span>
-  </span>
+<div class="site-footer">
   <style>
-    .build-info-details,
-    .build-info-copied { display: none; user-select: all; }
-    .build-info:hover .build-info-label { display: none; }
-    .build-info:hover .build-info-details { display: inline; }
-    .build-info.copied .build-info-details { display: none; }
-    .build-info.copied .build-info-copied { display: inline; }
+    .site-footer {
+      text-align: center; font-size: 0.8em; color: var(--body-quiet-color, #999);
+      padding: 8px 0; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .site-footer > a { color: var(--body-quiet-color, #999); }
+    .site-footer-sep { opacity: .6; }
+
+    .build-info { position: relative; display: inline-block; }
+    .build-info-trigger {
+      background: none; border: 0; padding: 0; cursor: pointer;
+      color: var(--body-quiet-color, #999); font: inherit;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .build-info-short { font-family: var(--font-family-monospace, monospace); }
+    .build-info-trigger:hover,
+    .build-info-trigger[aria-expanded="true"] { color: var(--link-fg, #417690); }
+    .build-info-trigger:focus-visible,
+    .build-info-copy:focus-visible,
+    .build-info-copy-all:focus-visible { outline: 2px solid var(--primary, #79aec8); outline-offset: 2px; border-radius: 3px; }
+
+    .build-info-card {
+      display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+      z-index: 20; min-width: 340px; max-width: 90vw;
+      background: var(--body-bg, #fff); color: var(--body-fg, #333);
+      border: 1px solid var(--border-color, #ccc); border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+      padding: 10px 12px 8px; text-align: left; font-size: 13px; line-height: 1.4;
+    }
+    .build-info-card::after {
+      content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 7px solid transparent; border-top-color: var(--body-bg, #fff);
+    }
+    .build-info:hover .build-info-card,
+    .build-info:focus-within .build-info-card,
+    .build-info.open .build-info-card { display: block; }
+
+    .build-info-rows {
+      display: grid; grid-template-columns: 82px 1fr 24px; align-items: center;
+      column-gap: 8px; row-gap: 4px;
+    }
+    .build-info-rows + .build-info-rows {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline-color, #e8e8e8);
+    }
+    .build-info-k { color: var(--body-quiet-color, #999); font-size: 12px; }
+    .build-info-v {
+      font-family: var(--font-family-monospace, monospace); font-size: 12.5px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .build-info-copy {
+      width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; cursor: pointer;
+      background: transparent; color: var(--body-quiet-color, #999);
+    }
+    .build-info-copy::before {
+      content: ""; display: block; width: 100%; height: 100%;
+      background: currentColor;
+      -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5'><rect x='5.5' y='5.5' width='8' height='8' rx='1.5'/><path d='M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2'/></svg>") no-repeat center / 14px 14px;
+              mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5'><rect x='5.5' y='5.5' width='8' height='8' rx='1.5'/><path d='M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2'/></svg>") no-repeat center / 14px 14px;
+    }
+    .build-info-copy:hover { background-color: var(--darkened-bg, #f0f0f0); color: var(--link-fg, #417690); }
+    .build-info-copy.copied { color: #2f7d4f; background-color: var(--message-success-bg, #dfd); }
+    .build-info-copy.copied::before {
+      -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8'><path d='M3 8.5l3 3 7-7'/></svg>");
+              mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8'><path d='M3 8.5l3 3 7-7'/></svg>");
+    }
+
+    .build-info-foot {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline-color, #e8e8e8);
+      display: flex; justify-content: flex-end;
+    }
+    .build-info-copy-all {
+      background: none; border: 1px solid var(--border-color, #ccc); border-radius: 5px; cursor: pointer;
+      padding: 4px 10px; font: inherit; font-size: 12px; color: var(--link-fg, #417690);
+    }
+    .build-info-copy-all:hover { background: var(--darkened-bg, #f0f0f0); }
+    .build-info-copy-all.copied { color: #2f7d4f; border-color: #2f7d4f; background: var(--message-success-bg, #dfd); }
+    .build-info-lbl-copied { display: none; }
+    .build-info-copy-all.copied .build-info-lbl-copy { display: none; }
+    .build-info-copy-all.copied .build-info-lbl-copied { display: inline; }
+
+    @media (max-width: 600px) {
+      .build-info-card { left: 0; transform: none; min-width: 0; width: calc(100vw - 40px); }
+      .build-info-card::after { left: 40px; }
+    }
   </style>
+
+  <a href="https://github.com/kanton-bern/geo-metadata-engine/blob/main/THIRD-PARTY-LICENSES.md" target="_blank" rel="noopener">Third-Party Licenses</a>
+  {% if user.is_authenticated %}
+  <span class="site-footer-sep">·</span>
+
+  <div class="build-info" id="build-info">
+    <button class="build-info-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="build-info-card">
+      Build info{% if app_version_short %} <span class="build-info-short">{{ app_version_short }}</span>{% endif %}
+    </button>
+
+    <div class="build-info-card" id="build-info-card" role="dialog" aria-label="Build info">
+      {# Where it runs #}
+      <div class="build-info-rows">
+        {% if environment %}
+        <span class="build-info-k">Environment</span>
+        <span class="build-info-v" title="{{ environment }}" data-label="Environment" data-copy="{{ environment }}">{{ environment }}</span>
+        <button class="build-info-copy" type="button" title="Copy environment"></button>
+        {% endif %}
+        {% if namespace %}
+        <span class="build-info-k">Namespace</span>
+        <span class="build-info-v" title="{{ namespace }}" data-label="Namespace" data-copy="{{ namespace }}">{{ namespace }}</span>
+        <button class="build-info-copy" type="button" title="Copy namespace"></button>
+        {% endif %}
+        {% if pod_name %}
+        <span class="build-info-k">Pod</span>
+        <span class="build-info-v" title="{{ pod_name }}" data-label="Pod" data-copy="{{ pod_name }}">{{ pod_name }}</span>
+        <button class="build-info-copy" type="button" title="Copy pod"></button>
+        {% endif %}
+      </div>
+
+      {# What runs #}
+      <div class="build-info-rows">
+        {% if app_version %}
+        <span class="build-info-k">Version</span>
+        <span class="build-info-v" title="{{ app_version }}" data-label="Version" data-copy="{{ app_version }}">{{ app_version }}</span>
+        <button class="build-info-copy" type="button" title="Copy version"></button>
+        {% endif %}
+        {% if image_name %}
+        <span class="build-info-k">Image</span>
+        <span class="build-info-v" title="{{ image_name }}" data-label="Image" data-copy="{{ image_name }}">{{ image_name }}</span>
+        <button class="build-info-copy" type="button" title="Copy image"></button>
+        {% endif %}
+        {% if django_version %}
+        <span class="build-info-k">Django</span>
+        <span class="build-info-v" title="{{ django_version }}" data-label="Django" data-copy="{{ django_version }}">{{ django_version }}</span>
+        <button class="build-info-copy" type="button" title="Copy Django version"></button>
+        {% endif %}
+      </div>
+
+      <div class="build-info-foot">
+        <button class="build-info-copy-all" type="button">
+          <span class="build-info-lbl-copy">Copy all</span>
+          <span class="build-info-lbl-copied">Copied</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Copy the build info to the clipboard on click and show a short confirmation.
-    document.querySelector(".build-info").addEventListener("click", function () {
-      const el = this;
-      const text = el.querySelector(".build-info-details").textContent;
-      navigator.clipboard.writeText(text).then(function () {
-        el.classList.add("copied");
-        setTimeout(function () { el.classList.remove("copied"); }, 1500);
+    (function () {
+      var root = document.getElementById("build-info");
+      if (!root) return;
+      var trigger = root.querySelector(".build-info-trigger");
+      var values = root.querySelectorAll(".build-info-v");
+
+      function write(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          // Swallow rejections (e.g. permission denied) so nothing leaks to the console.
+          return navigator.clipboard.writeText(text).catch(function () {});
+        }
+        // Clipboard API is unavailable over plain HTTP; nothing to do.
+        return Promise.resolve();
+      }
+      function flash(btn) {
+        btn.classList.add("copied");
+        clearTimeout(btn._copiedTimer);
+        btn._copiedTimer = setTimeout(function () { btn.classList.remove("copied"); }, 1500);
+      }
+      function allText() {
+        var rows = [], maxLabel = 0;
+        values.forEach(function (v) {
+          rows.push([v.dataset.label, v.dataset.copy]);
+          maxLabel = Math.max(maxLabel, v.dataset.label.length);
+        });
+        return rows.map(function (r) {
+          return (r[0] + ":").padEnd(maxLabel + 2) + r[1];
+        }).join("\n");
+      }
+      function setOpen(open) {
+        root.classList.toggle("open", open);
+        trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+
+      trigger.addEventListener("click", function () { setOpen(!root.classList.contains("open")); });
+
+      root.querySelectorAll(".build-info-copy").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var v = btn.previousElementSibling;
+          write(v.dataset.copy).then(function () { flash(btn); });
+        });
       });
-    });
+      root.querySelector(".build-info-copy-all").addEventListener("click", function () {
+        var btn = this;
+        write(allText()).then(function () { flash(btn); });
+      });
+
+      document.addEventListener("click", function (e) {
+        if (!root.contains(e.target)) setOpen(false);
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") setOpen(false);
+      });
+    })();
   </script>
   {% endif %}
 </div>
