@@ -1,0 +1,136 @@
+/* Customisations of the Django admin.
+   Tokens map to the admin's own CSS variables (django/contrib/admin/static/admin/css/base.css),
+   so light and dark mode follow the admin theme automatically. */
+
+/* Footer -------------------------------------------------------------- */
+
+.admin-footer {
+  --admin-footer-fg: var(--body-quiet-color);
+  --admin-footer-gap: 8px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--admin-footer-gap);
+  padding: var(--admin-footer-gap) 0;
+  font-size: 0.75em;
+  color: var(--admin-footer-fg);
+}
+
+.admin-footer__link:link,
+.admin-footer__link:visited {
+  color: inherit;
+}
+
+
+.admin-footer__sep {
+  opacity: 0.6;
+}
+
+/* Build info popover -------------------------------------------------- */
+/* Native popover: the browser centres it in the viewport, keeps it within the
+   screen and closes it on Escape or an outside click. */
+
+.build-info {
+  --build-info-fg: var(--body-fg);
+  --build-info-fg-quiet: var(--body-quiet-color);
+  --build-info-fg-accent: var(--link-fg);
+  --build-info-bg: var(--body-bg);
+  --build-info-bg-hover: var(--darkened-bg);
+  --build-info-bg-success: var(--message-success-bg);
+  --build-info-border: var(--border-color);
+  --build-info-hairline: var(--hairline-color);
+  --build-info-font-mono: var(--font-family-monospace);
+  --build-info-radius: 8px;
+  --build-info-gap: 6px;
+}
+
+.build-info__trigger {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  background: none;
+}
+
+.build-info__trigger:hover {
+  color: var(--build-info-fg-accent);
+}
+
+.build-info__card {
+  padding: var(--build-info-gap) 10px 8px;
+  text-align: left;
+  color: var(--build-info-fg);
+  background: var(--build-info-bg);
+  border: 1px solid var(--build-info-border);
+  border-radius: var(--build-info-radius);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.build-info__card::backdrop {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Undo the admin's generic table styling (padding, hairline, header background). */
+.build-info__table th,
+.build-info__table td {
+  padding: 2px var(--build-info-gap);
+  border: 0;
+  background: none;
+  vertical-align: middle;
+}
+
+.build-info__label {
+  font-weight: normal;
+  white-space: nowrap;
+  color: var(--build-info-fg-quiet);
+}
+
+.build-info__value {
+  font-family: var(--build-info-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.build-info__copy {
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  line-height: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--build-info-fg-quiet);
+  background: none;
+}
+
+.build-info__copy:hover {
+  color: var(--build-info-fg-accent);
+  background: var(--build-info-bg-hover);
+}
+
+.build-info__copy--all {
+  padding: 3px 10px;
+  border: 1px solid var(--build-info-border);
+  border-radius: 5px;
+  line-height: normal;
+  font-size: 0.75rem;
+  color: var(--build-info-fg-accent);
+}
+
+.build-info__copy--copied,
+.build-info__copy--copied:hover {
+  color: var(--build-info-fg);
+  background: var(--build-info-bg-success);
+}
+
+.build-info__copy--all.build-info__copy--copied::after {
+  content: " ✓";
+}
+
+.build-info__actions {
+  margin-top: var(--build-info-gap);
+  padding-top: var(--build-info-gap);
+  border-top: 1px solid var(--build-info-hairline);
+  text-align: right;
+}

@@ -1,0 +1,48 @@
+/* Standalone pages outside the Django admin (currently only the landing page
+   for signed-in users without staff rights). base.html loads the admin's
+   base.css and dark_mode.css, so colours, fonts and dark mode come from
+   Django's own tokens; this file only adds layout. */
+
+.site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.site__main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 16px;
+}
+
+.site__footer {
+  padding: 16px;
+  border-top: 1px solid var(--hairline-color);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--body-quiet-color);
+}
+
+.site__footer-link:link,
+.site__footer-link:visited {
+  color: inherit;
+}
+
+.notice {
+  max-width: 600px;
+  padding: 24px 32px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.notice__alert {
+  text-align: left;
+}
+
+.notice__text {
+  margin: 0;
+  color: var(--body-quiet-color);
+}

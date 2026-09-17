@@ -1,10 +1,34 @@
-{% extends "admin/base_site.html" %} {% block footer %} {{ block.super }}
-<div style="text-align: center; font-size: 0.8em; color: #999; padding: 8px 0">
-  <a
-    href="https://github.com/kanton-bern/geo-metadata-engine/blob/main/THIRD-PARTY-LICENSES.md"
-    target="_blank"
-    rel="noopener"
-    style="color: #999">Third-Party Licenses
-  </a>
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+<div class="admin-footer">
+  <a class="admin-footer__link" href="https://github.com/kanton-bern/geo-metadata-engine/blob/main/THIRD-PARTY-LICENSES.md" target="_blank" rel="noopener">Third-Party Licenses</a>
+  {% if user.is_authenticated %}
+  <span class="admin-footer__sep">·</span>
+  <div class="build-info">
+    <button class="build-info__trigger" type="button" popovertarget="build-info-card">Build info</button>
+    <div class="build-info__card" id="build-info-card" popover>
+      <table class="build-info__table">
+        {% for label, value in build_info %}
+        <tr class="build-info__row">
+          <th class="build-info__label" scope="row">{{ label }}</th>
+          <td class="build-info__value">{{ value }}</td>
+          <td><button class="build-info__copy" type="button" title="Copy {{ label|lower }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/></svg></button></td>
+        </tr>
+        {% endfor %}
+      </table>
+      <div class="build-info__actions">
+        <button class="build-info__copy build-info__copy--all" type="button">Copy all</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="{% static 'js/admin.js' %}"></script>
+  {% endif %}
 </div>
 {% endblock %}
