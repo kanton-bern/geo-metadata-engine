@@ -20,7 +20,7 @@ components:
       containers:
         geo-metadata-engine:
           image:
-            tag: develop-20260817124555-22100ac
+            tag: develop-20260917084037-4aa3398
           env:
             - name: DEBUG
               value: "False"
@@ -28,6 +28,18 @@ components:
               value: "127.0.0.1,localhost,geo-metadata-engine-dev.apps.be.ch"
             - name: CSRF_TRUSTED_ORIGINS
               value: "https://geo-metadata-engine-dev.apps.be.ch,http://localhost,http://127.0.0.1"
+            # Pod metadata for the footer (Kubernetes Downward API)
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # Stage name shown in the admin footer
+            - name: APP_ENVIRONMENT
+              value: "test"
           livenessProbe:
             enabled: false
             initialDelaySeconds: 10
