@@ -11,9 +11,9 @@
   <a class="admin-footer__link" href="https://github.com/kanton-bern/geo-metadata-engine/blob/main/THIRD-PARTY-LICENSES.md" target="_blank" rel="noopener">Third-Party Licenses</a>
   {% if user.is_authenticated %}
   <span class="admin-footer__sep">·</span>
-  <details class="build-info">
-    <summary class="build-info__summary">Build info</summary>
-    <div class="build-info__card">
+  <div class="build-info">
+    <button class="build-info__trigger" type="button" popovertarget="build-info-card">Build info</button>
+    <div class="build-info__card" id="build-info-card" popover>
       <table class="build-info__table">
         {% for label, value in build_info %}
         <tr class="build-info__row">
@@ -27,7 +27,7 @@
         <button class="build-info__copy build-info__copy--all" type="button">Copy all</button>
       </div>
     </div>
-  </details>
+  </div>
   <script type="module" src="{% static 'js/admin.js' %}"></script>
   {% endif %}
 </div>
