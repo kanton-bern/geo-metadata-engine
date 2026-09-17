@@ -1,5 +1,5 @@
 // Customisations of the Django admin: copy buttons for the "Build info" popover.
-// Opening and closing the popover is handled by the native <details> element.
+// Opening and closing the popover is handled by the native popover attribute.
 
 const COPIED_CLASS = "build-info__copy--copied";
 
@@ -12,18 +12,11 @@ const allValues = () => rows.map((row) => `${labelOf(row)}: ${valueOf(row)}`).jo
 
 root.addEventListener("click", async ({ target }) => {
   const button = target.closest(".build-info__copy");
+  // The Clipboard API is only available in secure contexts (HTTPS or localhost).
   if (!button || !navigator.clipboard) return;
 
   const row = button.closest(".build-info__row");
   await navigator.clipboard.writeText(row ? valueOf(row) : allValues());
   button.classList.add(COPIED_CLASS);
   setTimeout(() => button.classList.remove(COPIED_CLASS), 1500);
-});
-
-// Close the popover when clicking elsewhere or pressing Escape.
-document.addEventListener("click", ({ target }) => {
-  if (!root.contains(target)) root.open = false;
-});
-document.addEventListener("keydown", ({ key }) => {
-  if (key === "Escape") root.open = false;
 });

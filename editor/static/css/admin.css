@@ -14,19 +14,23 @@
   flex-wrap: wrap;
   gap: var(--admin-footer-gap);
   padding: var(--admin-footer-gap) 0;
-  font-size: 0.8em;
+  font-size: 0.75em;
   color: var(--admin-footer-fg);
 }
 
-.admin-footer__link {
+.admin-footer__link:link,
+.admin-footer__link:visited {
   color: inherit;
 }
+
 
 .admin-footer__sep {
   opacity: 0.6;
 }
 
 /* Build info popover -------------------------------------------------- */
+/* Native popover: the browser centres it in the viewport, keeps it within the
+   screen and closes it on Escape or an outside click. */
 
 .build-info {
   --build-info-fg: var(--body-fg);
@@ -40,35 +44,24 @@
   --build-info-font-mono: var(--font-family-monospace);
   --build-info-radius: 8px;
   --build-info-gap: 6px;
-
-  position: relative;
 }
 
-.build-info__summary {
+.build-info__trigger {
+  padding: 0;
+  border: 0;
   cursor: pointer;
-  list-style: none;
+  font: inherit;
+  color: inherit;
+  background: none;
 }
 
-.build-info__summary::-webkit-details-marker {
-  display: none;
-}
-
-.build-info__summary:hover,
-.build-info[open] .build-info__summary {
+.build-info__trigger:hover {
   color: var(--build-info-fg-accent);
 }
 
 .build-info__card {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  min-width: 340px;
-  max-width: min(90vw, 680px);
   padding: var(--build-info-gap) 10px 8px;
   text-align: left;
-  font-size: 13px;
   color: var(--build-info-fg);
   background: var(--build-info-bg);
   border: 1px solid var(--build-info-border);
@@ -76,14 +69,8 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
 
-.build-info__card::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-top-color: var(--build-info-bg);
+.build-info__card::backdrop {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Undo the admin's generic table styling (padding, hairline, header background). */
@@ -127,7 +114,7 @@
   border: 1px solid var(--build-info-border);
   border-radius: 5px;
   line-height: normal;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--build-info-fg-accent);
 }
 
@@ -146,17 +133,4 @@
   padding-top: var(--build-info-gap);
   border-top: 1px solid var(--build-info-hairline);
   text-align: right;
-}
-
-@media (max-width: 600px) {
-  .build-info__card {
-    left: 0;
-    transform: none;
-    min-width: 0;
-    width: calc(100vw - 40px);
-  }
-
-  .build-info__card::after {
-    left: 40px;
-  }
 }
