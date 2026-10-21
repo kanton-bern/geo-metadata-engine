@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BGI Metadata Editor — a Django-based metadata management system for the WIS-BE project of Canton Bern. It manages geospatial metadata (layers, attributes, value tables).
+GID Metadata Editor — a Django-based metadata management system for the WIS-BE project of Canton Bern. It manages geospatial metadata (layers, attributes, value tables).
 
 ## Development Setup
 
 ```bash
-conda create -n bgi_metadata python=3.14
-conda activate bgi_metadata
+conda create -n gid_metadata python=3.14
+conda activate gid_metadata
 pip install -r requirements.txt
 ```
 
@@ -30,7 +30,7 @@ python manage.py makemigrations               # Create new migration files
 python manage.py test                         # Run tests (editor/tests/)
 python manage.py test editor.tests.test_portal_user.PortalUserModelTest   # Run a single test case
 python manage.py shell                        # Django interactive shell
-docker build -t bgi_metadata .                # Build Docker image
+docker build -t gid_metadata .                # Build Docker image
 ```
 
 ## Code Style
