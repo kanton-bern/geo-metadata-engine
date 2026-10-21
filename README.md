@@ -50,8 +50,8 @@ cd geo-metadata-engine
 Create and activate a virtual environment:
 
 ```
-conda create -n bgi_metadata python=3.14
-conda activate bgi_metadata
+conda create -n gid_metadata python=3.14
+conda activate gid_metadata
 ```
 
 Install dependencies:
