@@ -114,16 +114,27 @@ class EbeneForm(forms.ModelForm):
                 })
         return cleaned
 
+# ---------------------------------------------------------------------------
+# Dienst Inline — erscheint unter Ebene (Zwischentabelle EbeneDienst)
+# ---------------------------------------------------------------------------
+class EbeneDienstInline(admin.TabularInline):
+    model = Ebene.dienste.through
+    extra = 0
+    autocomplete_fields = ('dienst',)
+    verbose_name = "Dienst"
+    verbose_name_plural = "Dienste"
 
 # ---------------------------------------------------------------------------
 # Ebene
 # ---------------------------------------------------------------------------
 class EbeneAdmin(admin.ModelAdmin):
     form = EbeneForm
-    list_display = ('name', 'geopaeckli', 'dienst', 'featurekategorie')
+    inlines = [EbeneDienstInline]                                    # NEU
+    list_display = ('name', 'geopaeckli', 'dienste_anzeige',         # GEÄNDERT: dienst → dienste_anzeige
+                    'featurekategorie')
     list_filter = ('geopaeckli', 'featurekategorie', 'zugangsberechtigung')
     search_fields = ('name', 'titel_de')
-    filter_horizontal = ('attribute', 'tags', 'triggers', 'views')
+    filter_horizontal = ('attribute', 'tags', 'triggers', 'views')   # unverändert: 'dienste' darf hier NICHT rein (through-Modell)
     fieldsets = (
         (None, {
             'fields': (
@@ -131,7 +142,7 @@ class EbeneAdmin(admin.ModelAdmin):
                 'kurzbeschreibung_de', 'kurzbeschreibung_fr',
                 'featurekategorie', 'zugangsberechtigung', 'foerderprogramm',
                 'editierbar', 'datenstand_date', 'dokumentation',
-                'geopaeckli', 'dienst',
+                'geopaeckli',
             ),
         }),
         ('Attribute', {
@@ -147,6 +158,11 @@ class EbeneAdmin(admin.ModelAdmin):
         }),
     )
 
+    def dienste_anzeige(self, obj):                                  # NEU
+        return ", ".join(d.technischer_name_dienst for d in obj.dienste.all())
+    dienste_anzeige.short_description = "Dienste"
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('dienste')
 
 # ---------------------------------------------------------------------------
 # Attribut — mit Wertetabellen-Inline
