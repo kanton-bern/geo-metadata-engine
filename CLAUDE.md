@@ -35,7 +35,7 @@ docker build -t gid_metadata .                # Build Docker image
 
 ## Code Style
 
-Follow [PEP 8](https://peps.python.org/pep-0008/) for all Python code. Django's own [coding style](https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/coding-style/) applies for conventions specific to Django (models, views, admin). No automated formatter is enforced; consistency with the surrounding code is the guideline.
+Follow [PEP 8](https://peps.python.org/pep-0008/) for all Python code. Django's own [coding style](https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/coding-style/) applies for conventions specific to Django (models, views, admin). Code is formatted with [autopep8](https://pypi.org/project/autopep8/) (e.g. via the VS Code extension); it is not enforced in CI, consistency with the surrounding code is the guideline.
 
 ## Architecture
 
@@ -46,7 +46,7 @@ See [docs/scope_context.svg](docs/scope_context.svg) for the scope and context d
 ```
 metadata/          # Django project config (settings, root URLs, wsgi)
 editor/            # Single Django app containing all business logic
-  models/          # One file per model (16 model files)
+  models/          # One file per model
   views.py         # API endpoints + web map creation views
   admin.py         # Django admin with custom forms and inlines
   urls.py          # App-level URL routing
@@ -61,7 +61,8 @@ editor/            # Single Django app containing all business logic
 
 - **Thema**: Top-level subject area (topic classification)
 - **Geopäckli**: Core metadata container ("geo package") — owns Attribute and Wertetabellen; linked to a Thema
-- **Ebene**: Geospatial layer definition (Raster/Vektor/Tabelle); linked to Geopäckli and Dienst; M2M with Attribut, Tags, Triggers, Views
+- **Ebene**: Geospatial layer definition (Raster/Vektor/Tabelle); linked to Geopäckli; M2M with Dienst (via EbeneDienst), Attribut, Tags, Triggers, Views
+- **EbeneDienst**: Through model of the Ebene ↔ Dienst M2M; one row per (Ebene, Dienst); place for future per-publication fields
 - **Attribut**: Data field descriptor (name, type, constraints); belongs to Geopäckli; M2M with Ebene and Wertetabellen
 - **Wertetabelle**: Enumeration/value table; belongs to Geopäckli; M2M with Attribut
 - **Dienst**: Web service metadata (AWN/AGI owner, external flag)
@@ -71,7 +72,7 @@ Key design decision: Attribute belong to Geopäckli (not Ebene), so they survive
 
 ### Admin Interface
 
-`editor/admin.py` has custom logic to filter the Attribut M2M field on Ebene forms to only show attributes belonging to the selected Geopäckli. This is done via a custom `EbeneAdminForm` with a filtered queryset.
+`editor/admin.py` has custom logic to filter the Attribut M2M field on Ebene forms to only show attributes belonging to the selected Geopäckli. This is done via a custom `EbeneForm` with a filtered queryset.
 
 ### Deployment
 
