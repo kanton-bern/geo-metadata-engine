@@ -114,6 +114,7 @@ class EbeneForm(forms.ModelForm):
                 })
         return cleaned
 
+
 # ---------------------------------------------------------------------------
 # Dienst Inline — erscheint unter Ebene (Zwischentabelle EbeneDienst)
 # ---------------------------------------------------------------------------
@@ -124,17 +125,19 @@ class EbeneDienstInline(admin.TabularInline):
     verbose_name = "Dienst"
     verbose_name_plural = "Dienste"
 
+
 # ---------------------------------------------------------------------------
 # Ebene
 # ---------------------------------------------------------------------------
 class EbeneAdmin(admin.ModelAdmin):
     form = EbeneForm
-    inlines = [EbeneDienstInline]                                    # NEU
-    list_display = ('name', 'geopaeckli', 'dienste_anzeige',         # GEÄNDERT: dienst → dienste_anzeige
+    inlines = [EbeneDienstInline]
+    list_display = ('name', 'geopaeckli', 'dienste_anzeige',
                     'featurekategorie')
     list_filter = ('geopaeckli', 'featurekategorie', 'zugangsberechtigung')
     search_fields = ('name', 'titel_de')
-    filter_horizontal = ('attribute', 'tags', 'triggers', 'views')   # unverändert: 'dienste' darf hier NICHT rein (through-Modell)
+    # 'dienste' darf hier nicht rein: M2M mit through-Modell → EbeneDienstInline
+    filter_horizontal = ('attribute', 'tags', 'triggers', 'views')
     fieldsets = (
         (None, {
             'fields': (
@@ -158,11 +161,13 @@ class EbeneAdmin(admin.ModelAdmin):
         }),
     )
 
-    def dienste_anzeige(self, obj):                                  # NEU
+    def dienste_anzeige(self, obj):
         return ", ".join(d.technischer_name_dienst for d in obj.dienste.all())
     dienste_anzeige.short_description = "Dienste"
+
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('dienste')
+
 
 # ---------------------------------------------------------------------------
 # Attribut — mit Wertetabellen-Inline
@@ -220,6 +225,7 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('name_de', 'name_fr')
     search_fields = ('name_de',)
 
+
 # ---------------------------------------------------------------------------
 # View - Dienste als Filter & Anzahl Dienste anzeigen
 # ---------------------------------------------------------------------------
@@ -227,10 +233,11 @@ class ViewAdmin(admin.ModelAdmin):
     filter_horizontal = ('dienste',)
     list_display = ('name_view', 'anzahl_dienste')
     search_fields = ('name_view',)
- 
+
     def anzahl_dienste(self, obj):
         return obj.dienste.count()
     anzahl_dienste.short_description = "# Dienste"
+
 
 # ---------------------------------------------------------------------------
 # Portal User
@@ -245,7 +252,6 @@ class PortalUserAdminForm(forms.ModelForm):
     class Meta:
         model = PortalUser
         fields = '__all__'
-
 
 
 def _export_zu_bestellen_csv(system):
